@@ -19,7 +19,7 @@ export class Page {
   page_id: string;
 
   @Column()
-  page_name;
+  page_name:
   string;
 
   @CreateDateColumn()

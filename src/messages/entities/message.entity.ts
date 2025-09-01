@@ -23,8 +23,8 @@ export class Message {
   @Column({ type: 'enum', enum: SourceEmun })
   source: SourceEmun;
 
-  @Column({ type: 'array' })
-  content: string[];
+@Column("text", { array: true })
+content: string[];
 
   @CreateDateColumn()
   create_at: Date;
