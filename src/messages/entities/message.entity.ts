@@ -14,8 +14,8 @@ import { AnalyzedMessage } from 'src/analyzed_messages/entities/analyzed_message
 
 @Entity()
 export class Message {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({ unique: true })
   facebook_message_id: string;

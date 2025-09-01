@@ -13,8 +13,8 @@ import { Page } from 'src/pages/entities/page.entity';
 
 @Entity()
 export class Order {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
   product_name: string;

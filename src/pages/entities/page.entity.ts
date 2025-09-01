@@ -12,8 +12,8 @@ import {
 
 @Entity()
 export class Page {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
   page_id: string;

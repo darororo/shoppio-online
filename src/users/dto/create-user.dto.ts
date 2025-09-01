@@ -1,23 +1,24 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { UserRole } from '../enum/roles';
 
 export class CreateUserDto {
-  @IsString()
-  @IsNotEmpty()
-  page_id: string;
+   @IsEmail()
+  email: string;
 
   @IsString()
-  @IsNotEmpty()
-  facebook_user_id: string;
+  password_hash: string;
 
   @IsString()
-  @IsNotEmpty()
-  username: string;
+  @IsOptional()
+  role?: UserRole = UserRole.USER;
+
+  @IsBoolean()
+  @IsOptional()
+  is_active?: boolean = false;
 
   @IsString()
-  @IsNotEmpty()
-  profile_pic: string;
+  name: string;
 
   @IsString()
-  @IsNotEmpty()
-  access_token: string;
+  phone_number: string;
 }

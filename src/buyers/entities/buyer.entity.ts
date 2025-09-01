@@ -11,8 +11,8 @@ import {
 
 @Entity()
 export class Buyer {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({ unique: true, nullable: false })
   facebook_user_id: string;

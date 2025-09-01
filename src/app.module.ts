@@ -11,12 +11,28 @@ import { OrdersModule } from './orders/orders.module';
 import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { getDatabaseConfig } from './database/database.provider';
+import { SocialAccountModule } from './social_account/social_account.module';
+import { SocialPagesModule } from './social_pages/social_pages.module';
+import { PostsModule } from './posts/posts.module';
+import { PostDistributionsModule } from './post_distributions/post_distributions.module';
+import { SocialMessagesModule } from './social_messages/social_messages.module';
 
 @Module({
-     imports: [
+  imports: [
     ConfigModule.forRoot(),
-  TypeOrmModule.forRoot(getDatabaseConfig()),
-   UsersModule, BuyersModule, PagesModule, MessagesModule, AnalyzedMessagesModule, OrdersModule, AuthModule
+    TypeOrmModule.forRoot(getDatabaseConfig()),
+    SocialAccountModule,
+    SocialPagesModule,
+    PostsModule,
+    PostDistributionsModule,
+    SocialMessagesModule,
+    UsersModule,
+    // BuyersModule,
+    // PagesModule,
+    // MessagesModule,
+    AnalyzedMessagesModule,
+    // OrdersModule,
+    // AuthModule,
   ],
   // imports: [UsersModule, BuyersModule, PagesModule, MessagesModule, AnalyzedMessagesModule, OrdersModule, AuthModule],
   controllers: [AppController],

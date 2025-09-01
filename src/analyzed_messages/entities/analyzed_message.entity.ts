@@ -1,20 +1,13 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  OneToMany,
-  OneToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { IntentionEnum } from '../enum/intention_enum';
 import { Message } from 'src/messages/entities/message.entity';
 import { Order } from 'src/orders/entities/order.entity';
+import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
 
-@Entity()
+@Entity('analyze_messages')
 export class AnalyzedMessage {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({ nullable: true })
   phone_number: string;
@@ -22,21 +15,26 @@ export class AnalyzedMessage {
   @Column({ nullable: true })
   location: string;
 
-  @Column({ type: 'decimal', precision: 3, scale: 2 })
-  intent_score: number;
+  @ManyToOne(() => SocialMessage, (msg) => msg.analyzedMessages, {
+    onDelete: 'CASCADE',
+  })
+  message: SocialMessage;
 
-  @Column({ type: 'enum', enum: IntentionEnum })
-  intention: IntentionEnum;
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  intent: string; // e.g., buy, info, complaint, support, others
 
-  @CreateDateColumn()
-  create_at: Date;
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  sentiment: string; // positive, negative, neutral
 
-  @UpdateDateColumn()
-  update_at: Date;
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  language: string; // km, en, etc.
 
-  @OneToOne(() => Message, (message) => message.id)
-  message: Message;
+  @Column({ type: 'text', array: true, nullable: true })
+  keywords: string[];
 
-  @OneToMany(() => Order, (order) => order.id)
-  order: Order[];
+  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  confidence_score: number; // e.g. 0.95
+
+  @CreateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
+  analyzed_at: Date;
 }
