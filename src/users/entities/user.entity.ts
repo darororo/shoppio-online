@@ -18,12 +18,21 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
   
-  @Column({unique: true})
-  email:string;
- 
-  @Column({unique: true})
-  password_hash:string;
-  
+  @Column({ unique: true })
+  facebookId: string;
+
+  @Column()
+  name: string;
+
+  @Column({ unique: true, nullable: true, type: 'varchar' })
+  email: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  profilePicture: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  accessToken: string;
+
   @Column({ 
     type: 'enum',
     enum: UserRole,
@@ -31,21 +40,22 @@ export class User {
   })
   role: UserRole;
 
-  @Column({ type: 'boolean', default: false })
-  is_active:boolean;
-
-  @Column()
-  name:string;
-
-  @Column()
+  @Column({nullable:true, unique:true})
   phone_number:string;
+ 
+  @Column({ type: 'boolean', default: false })
+  isActive:boolean;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
-  created_at: Date;
+  createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
-  updated_at: Date;
+  updatedAt: Date;
   
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastLoginAt: Date;
+
   @OneToMany(()=> SocialAccount,(socialAccount)=> socialAccount.user,{
     cascade:true,
   })
@@ -53,22 +63,4 @@ export class User {
 
   @OneToMany(()=> Post,(post)=> post.user)
   posts: Post[];
-  // @Column()
-  // page_id: string;
-
-  // @Column({ unique: true })
-  // facebook_user_id: string;
-
-  // @Column()
-  // profile_pic: string;
-
-  // @Column()
-  // access_token: string;
-
-  // @CreateDateColumn()
-  // create_at: Date;
-
-  // @OneToMany(() => Page, (page) => page.id)
-  // page: Page[];
-
 }

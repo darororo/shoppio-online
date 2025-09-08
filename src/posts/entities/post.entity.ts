@@ -11,7 +11,7 @@ export class Post {
  user:User;
 
  @Column()
- content: string;
+ content: string; // 
 
  @Column()
  media_url: string;

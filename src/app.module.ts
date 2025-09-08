@@ -2,35 +2,41 @@ import { ConfigModule } from '@nestjs/config';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './users/users.module';
-import { BuyersModule } from './buyers/buyers.module';
-import { PagesModule } from './pages/pages.module';
-import { MessagesModule } from './messages/messages.module';
-import { AnalyzedMessagesModule } from './analyzed_messages/analyzed_messages.module';
-import { OrdersModule } from './orders/orders.module';
+// import { UsersModule } from './users/users.module';
+// import { BuyersModule } from './buyers/buyers.module';
+// import { PagesModule } from './pages/pages.module';
+// import { MessagesModule } from './messages/messages.module';
+// import { AnalyzedMessagesModule } from './analyzed_messages/analyzed_messages.module';
+// import { OrdersModule } from './orders/orders.module';
 import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { getDatabaseConfig } from './database/database.provider';
-import { SocialAccountModule } from './social_account/social_account.module';
-import { SocialPagesModule } from './social_pages/social_pages.module';
-import { PostsModule } from './posts/posts.module';
-import { PostDistributionsModule } from './post_distributions/post_distributions.module';
-import { SocialMessagesModule } from './social_messages/social_messages.module';
+// import { SocialAccountModule } from './social_account/social_account.module';
+// import { SocialPagesModule } from './social_pages/social_pages.module';
+// import { PostsModule } from './posts/posts.module';
+// import { PostDistributionsModule } from './post_distributions/post_distributions.module';
+// import { SocialMessagesModule } from './social_messages/social_messages.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot(
+      {
+        isGlobal: true,
+        envFilePath: `.env`,
+      }
+    ),
     TypeOrmModule.forRoot(getDatabaseConfig()),
-    SocialAccountModule,
-    SocialPagesModule,
-    PostsModule,
-    PostDistributionsModule,
-    SocialMessagesModule,
-    UsersModule,
+    AuthModule
+    // SocialAccountModule,
+    // SocialPagesModule,
+    // PostsModule,
+    // PostDistributionsModule,
+    // SocialMessagesModule,
+    // UsersModule,
     // BuyersModule,
     // PagesModule,
     // MessagesModule,
-    AnalyzedMessagesModule,
+    // AnalyzedMessagesModule,
     // OrdersModule,
     // AuthModule,
   ],

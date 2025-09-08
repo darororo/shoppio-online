@@ -20,8 +20,8 @@ export class AnalyzedMessage {
   })
   message: SocialMessage;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
-  intent: string; // e.g., buy, info, complaint, support, others
+  @Column({ type: 'varchar',enum: IntentionEnum,nullable: true })
+  intent: IntentionEnum; // e.g., buy, info, complaint, support, others
 
   @Column({ type: 'varchar', length: 20, nullable: true })
   sentiment: string; // positive, negative, neutral

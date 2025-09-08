@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { FacebookLoginDto } from 'src/users/dto/facebook-login.dto';
+import { User } from 'src/users/entities/user.entity';
 import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
-import { FacebookLoginDto } from './dto/facebook-login.dto';
 
 @Injectable()
 export class UsersService {
@@ -50,11 +50,11 @@ export class UsersService {
     }
   }
 
-  async updateLastLogin(userId: string): Promise<void> {
+  async updateLastLogin(userId: number): Promise<void> {
     await this.usersRepository.update(userId, { lastLoginAt: new Date() });
   }
 
-  async deactivateUser(userId: string): Promise<void> {
+  async deactivateUser(userId: number): Promise<void> {
     await this.usersRepository.update(userId, { isActive: false });
   }
 
