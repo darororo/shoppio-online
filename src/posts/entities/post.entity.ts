@@ -3,7 +3,7 @@ import { User } from "src/users/entities/user.entity";
 import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity('posts')
-export class Post {
+export class Post { // posts created by user to be scheduled and distributed to social pages
  @PrimaryGeneratedColumn('uuid')
  id: string;
 
@@ -11,7 +11,7 @@ export class Post {
  user:User;
 
  @Column()
- content: string; // 
+ content: string;
 
  @Column()
  media_url: string;

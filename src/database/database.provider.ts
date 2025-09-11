@@ -1,5 +1,7 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { AnalyzedMessage } from 'src/analyzed_messages/entities/analyzed_message.entity';
+import { Buyer } from 'src/buyers/entities/buyer.entity';
+import { Order } from 'src/orders/entities/order.entity';
 // import { Auth } from 'src/auth/entities/auth.entity';
 // import { Buyer } from 'src/buyers/entities/buyer.entity';
 // import { Message } from 'src/messages/entities/message.entity';
@@ -36,7 +38,7 @@ export function getDatabaseConfig(): TypeOrmModuleOptions {
     username,
     password,
     database,
-    entities: [User, Post, SocialAccount, SocialMessage,SocialPage,AnalyzedMessage, PostDistribution],
+    entities: [User, Post, SocialAccount, SocialMessage,SocialPage,AnalyzedMessage, PostDistribution, Buyer, Order],
     // Set synchronize to true for development only. NEVER use true in production!
     synchronize: process.env.NODE_ENV !== 'production',
     logging: process.env.NODE_ENV === 'development',

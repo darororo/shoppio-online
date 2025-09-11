@@ -13,7 +13,7 @@ import {
 } from 'typeorm';
 import { UserRole } from '../enum/roles';
 
-@Entity('users')
+@Entity('users') // main user table for login and manage system
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;

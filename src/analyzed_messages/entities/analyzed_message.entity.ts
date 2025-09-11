@@ -1,8 +1,7 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { IntentionEnum } from '../enum/intention_enum';
-import { Message } from 'src/messages/entities/message.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
+import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { IntentionEnum } from '../enum/intention_enum';
 
 @Entity('analyze_messages')
 export class AnalyzedMessage {
@@ -37,4 +36,7 @@ export class AnalyzedMessage {
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
   analyzed_at: Date;
+
+  @OneToMany(() => Order, (order) => order.analyzed_message)
+  orders: Order[];
 }

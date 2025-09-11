@@ -9,7 +9,7 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
     super({
       clientID: configService.get<string>('FACEBOOK_APP_ID') || '',
       clientSecret: configService.get<string>('FACEBOOK_APP_SECRET') || '',
-      callbackURL: 'https://localhost:3000/auth/facebook/callback',
+      callbackURL: 'http://localhost:3000/auth/facebook/callback',
       scope: ['email', 'public_profile'],
       profileFields: ['id', 'name', 'email', 'picture.type(large)']
     });
@@ -21,18 +21,36 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
     profile: Profile,
     done: any
   ): Promise<any> {
-    const { id, name, emails, photos } = profile;
-    
-    const user = {
-      facebookId: id,
-      email: emails?.[0]?.value,
-      firstName: name?.givenName,
-      lastName: name?.familyName,
-      name: `${name?.givenName} ${name?.familyName}`,
-      profilePicture: photos?.[0]?.value,
-      accessToken
-    };
-    
-    done(null, user);
+    try {
+      console.log('Facebook strategy validation started:', {
+        profileId: profile.id,
+        profileName: profile.displayName,
+        hasEmails: !!profile.emails?.length,
+        hasPhotos: !!profile.photos?.length,
+        accessTokenLength: accessToken?.length || 0
+      });
+
+      const { id, name, emails, photos } = profile;
+      
+      const user = {
+        facebookId: id,
+        email: emails?.[0]?.value,
+        firstName: name?.givenName,
+        lastName: name?.familyName,
+        name: `${name?.givenName || ''} ${name?.familyName || ''}`.trim() || profile.displayName,
+        profilePicture: photos?.[0]?.value,
+        accessToken
+      };
+      
+      console.log('Facebook user object created:', {
+        ...user,
+        accessToken: user.accessToken ? '***HIDDEN***' : 'MISSING'
+      });
+      
+      done(null, user);
+    } catch (error) {
+      console.error('Facebook strategy validation error:', error);
+      done(error, null);
+    }
   }
 }

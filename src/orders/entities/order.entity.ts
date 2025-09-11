@@ -1,3 +1,6 @@
+import { AnalyzedMessage } from 'src/analyzed_messages/entities/analyzed_message.entity';
+import { Buyer } from 'src/buyers/entities/buyer.entity';
+import { SocialPage } from 'src/social_pages/entities/social_page.entity';
 import {
   Column,
   CreateDateColumn,
@@ -7,12 +10,9 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { StatusEnum } from '../enum/status_enum';
-import { AnalyzedMessage } from 'src/analyzed_messages/entities/analyzed_message.entity';
-import { Buyer } from 'src/buyers/entities/buyer.entity';
-import { Page } from 'src/pages/entities/page.entity';
-
+ // this table used when analyzed by AI message contain order information
 @Entity()
-export class Order {
+export class Order {  // orders created from analyzed messages 
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -31,12 +31,12 @@ export class Order {
   @UpdateDateColumn()
   update_at: Date;
 
-  @ManyToOne(() => AnalyzedMessage, (analyzed_message) => analyzed_message.id)
+  @ManyToOne(() => AnalyzedMessage, (analyzed_message) => analyzed_message.orders)
   analyzed_message: AnalyzedMessage;
 
-  @ManyToOne(() => Buyer, (buyer) => buyer.id)
+  @ManyToOne(() => Buyer, (buyer) => buyer.order)
   buyer: Buyer;
 
-  @ManyToOne(() => Page, (page) => page.id)
-  page: Page[];
+  @ManyToOne(() => SocialPage, (page) => page.id)
+  page: SocialPage;
 }

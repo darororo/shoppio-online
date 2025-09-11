@@ -102,6 +102,35 @@ export class AuthService {
     }
   }
 
+  async getFacebookUserData(accessToken: string): Promise<any> {
+    try {
+      console.log('🔍 Fetching comprehensive user data from Facebook Graph API...');
+      
+      // Get comprehensive user data from Facebook Graph API
+      const response = await fetch(
+        `https://graph.facebook.com/me?access_token=${accessToken}&fields=id,name,email,picture.type(large),cover,birthday,location,hometown,relationship_status,about,website,link,locale,timezone,verified,updated_time`
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Facebook API error:', errorData);
+        throw new Error(`Facebook API error: ${errorData.error?.message || 'Invalid token'}`);
+      }
+      
+      const userData = await response.json();
+      console.log('✅ Facebook user data retrieved:', {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email
+      });
+      
+      return userData;
+    } catch (error) {
+      console.error('❌ Facebook user data fetch failed:', error.message);
+      throw new Error(`Facebook user data fetch failed: ${error.message}`);
+    }
+  }
+
   async getUserProfile(userId: string): Promise<UserResponseDto> {
     const user = await this.usersService.findById(userId);
     
@@ -119,5 +148,102 @@ export class AuthService {
       createdAt: user.createdAt,
       lastLoginAt: user.lastLoginAt,
     };
+  }
+
+  async getFacebookUserDataFromToken(accessToken: string): Promise<any> {
+    try {
+      console.log('🔍 Fetching user data from Facebook Graph API with provided token...');
+      
+      // First verify the token by getting basic user info
+      const userResponse = await fetch(
+        `https://graph.facebook.com/me?access_token=${accessToken}&fields=id,name,email,picture.type(large)`
+      );
+      
+      if (!userResponse.ok) {
+        const errorData = await userResponse.json();
+        console.error('Facebook API error:', errorData);
+        throw new Error(`Invalid Facebook token: ${errorData.error?.message || 'Token verification failed'}`);
+      }
+      
+      const userData = await userResponse.json();
+      console.log('✅ Basic user data retrieved:', {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email
+      });
+
+      // Verify that this token belongs to a user in our database
+      const dbUser = await this.usersService.findByFacebookId(userData.id);
+      if (!dbUser) {
+        throw new Error('User not found in our database');
+      }
+
+      // Get comprehensive user data from Facebook Graph API
+      const detailedResponse = await fetch(
+        `https://graph.facebook.com/v18.0/me?access_token=${accessToken}&fields=id,name,email,picture.type(large),cover,birthday,location,hometown,relationship_status,about,website,link,locale,timezone,verified,updated_time,friends.summary(true),posts.limit(10).summary(true),likes.summary(true)`
+      );
+      
+      if (!detailedResponse.ok) {
+        const errorData = await detailedResponse.json();
+        console.error('Facebook detailed API error:', errorData);
+        // If detailed request fails, return basic data
+        return {
+          ...userData,
+          dbUser: {
+            id: dbUser.id,
+            facebookId: dbUser.facebookId,
+            name: dbUser.name,
+            email: dbUser.email,
+            profilePicture: dbUser.profilePicture,
+            isActive: dbUser.isActive,
+            createdAt: dbUser.createdAt,
+            lastLoginAt: dbUser.lastLoginAt,
+          }
+        };
+      }
+      
+      const detailedData = await detailedResponse.json();
+      console.log('✅ Detailed Facebook user data retrieved');
+      
+      // Combine Facebook data with our database user info
+      return {
+        ...detailedData,
+        dbUser: {
+          id: dbUser.id,
+          facebookId: dbUser.facebookId,
+          name: dbUser.name,
+          email: dbUser.email,
+          profilePicture: dbUser.profilePicture,
+          isActive: dbUser.isActive,
+          createdAt: dbUser.createdAt,
+          lastLoginAt: dbUser.lastLoginAt,
+        }
+      };
+    } catch (error) {
+      console.error('❌ Facebook user data fetch failed:', error.message);
+      throw new Error(`Failed to fetch user data: ${error.message}`);
+    }
+  }
+
+  async getFacebookUserDataWithStoredToken(userId: string): Promise<any> {
+    try {
+      console.log('🔍 Fetching user data using stored Facebook token...');
+      
+      // Get user from database
+      const dbUser = await this.usersService.findById(userId);
+      if (!dbUser) {
+        throw new Error('User not found in our database');
+      }
+
+      if (!dbUser.accessToken) {
+        throw new Error('No Facebook token stored for this user');
+      }
+
+      // Use the stored token to fetch fresh data from Facebook
+      return await this.getFacebookUserDataFromToken(dbUser.accessToken);
+    } catch (error) {
+      console.error('❌ Failed to fetch user data with stored token:', error.message);
+      throw new Error(`Failed to fetch user data with stored token: ${error.message}`);
+    }
   }
 }

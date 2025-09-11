@@ -4,7 +4,7 @@ import { Column, CreateDateColumn, Entity, ForeignKey, ManyToOne, OneToMany, Pri
 
 @Entity('social_accounts')
 @Unique(['user','provider'])
-export class SocialAccount {
+export class SocialAccount { // account from social media platform like facebook, google, ...
  @PrimaryGeneratedColumn('uuid')
  id: string;
 
@@ -13,11 +13,11 @@ export class SocialAccount {
  })
  user: User;
 
-@Column()
+@Column() // facebook, google, ...
 provider: string;
 
 @Column()
-provider_user_id: string;
+provider_user_id: string; // facebook user id, google user id, ...
 
 @Column({ type: 'text', nullable: true })
 

@@ -1,5 +1,5 @@
-import { Message } from 'src/messages/entities/message.entity';
 import { Order } from 'src/orders/entities/order.entity';
+import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
 import {
   Column,
   CreateDateColumn,
@@ -9,7 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity()
+@Entity('buyers')
 export class Buyer {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -18,7 +18,7 @@ export class Buyer {
   facebook_user_id: string;
 
   @Column()
-  username: string;
+  name: string;
 
   @Column()
   profile_pic: string;
@@ -29,9 +29,9 @@ export class Buyer {
   @UpdateDateColumn()
   update_at: Date;
 
-  @OneToMany(() => Message, (message) => message.id)
-  message: Message[];
+  @OneToMany(() => SocialMessage, (socialMessage) => socialMessage.buyer)
+  socialMessages: SocialMessage[];
 
-  @OneToMany(() => Order, (order) => order.id)
+  @OneToMany(() => Order, (order) => order.buyer)
   order: Order[];
 }

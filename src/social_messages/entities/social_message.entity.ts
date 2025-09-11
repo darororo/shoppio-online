@@ -1,4 +1,5 @@
 import { AnalyzedMessage } from 'src/analyzed_messages/entities/analyzed_message.entity';
+import { Buyer } from 'src/buyers/entities/buyer.entity';
 import { SocialPage } from 'src/social_pages/entities/social_page.entity';
 import {
   Column,
@@ -10,7 +11,7 @@ import {
 } from 'typeorm';
 import { MessageType } from '../enum/message_type';
 
-@Entity('social_messages')
+@Entity('social_messages') // Original messages table from social media platform
 export class SocialMessage {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -25,6 +26,11 @@ export class SocialMessage {
     (analyzedMessage) => analyzedMessage.message,
   )
   analyzedMessages: AnalyzedMessage[];
+
+  @ManyToOne(() => Buyer, (buyer) => buyer.socialMessages, {
+    onDelete: 'SET NULL',
+  })
+  buyer: Buyer;
 
   @Column({ type: 'varchar', nullable: true })
   sender_id: string;

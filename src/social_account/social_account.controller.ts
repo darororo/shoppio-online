@@ -12,7 +12,7 @@ export class SocialAccountController {
     return this.socialAccountService.create(createSocialAccountDto);
   }
 
-  @Get()
+  @Get('pages')
   findAll() {
     return this.socialAccountService.findAll();
   }
