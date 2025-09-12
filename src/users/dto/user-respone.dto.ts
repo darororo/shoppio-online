@@ -7,10 +7,12 @@ export class UserResponseDto {
   isActive: boolean;
   createdAt: Date;
   lastLoginAt: Date;
+  accessToken?: string; // Facebook access token
 }
 
 export class LoginResponseDto {
   user: UserResponseDto;
-  accessToken: string;
+  accessToken: string; // JWT token for backend auth
+  facebookToken: string; // Facebook token for API calls
   expiresIn: string;
 }

@@ -145,40 +145,7 @@ export class AuthController {
     }
   }
 
-  // @Get('profile')
-  // @UseGuards(AuthGuard('jwt'))
-  // async getProfile(@Req() req: any): Promise<UserResponseDto> {
-  //   try {
-  //     return await this.authService.getUserProfile(req.user.id);
-  //   } catch (error) {
-  //     throw new HttpException(
-  //       'Unable to fetch user profile',
-  //       HttpStatus.INTERNAL_SERVER_ERROR
-  //     );
-  //   }
-  // }
-
-  // @Post('logout')
-  // @UseGuards(AuthGuard('jwt'))
-  // async logout(@Req() req: any): Promise<{ message: string }> {
-  //   // In a real application, you might want to blacklist the JWT token
-  //   // For now, we'll just return a success message
-  //   // The client should remove the token from storage
-  //   return { message: 'Logged out successfully' };
-  // }
-
-  // @Get('verify')
-  // @UseGuards(AuthGuard('jwt'))
-  // async verifyToken(@Req() req: any): Promise<{ valid: boolean; user: UserResponseDto }> {
-  //   try {
-  //     const user = await this.authService.getUserProfile(req.user.id);
-  //     return { valid: true, user };
-  //   } catch (error) {
-  //     throw new HttpException('Token verification failed', HttpStatus.UNAUTHORIZED);
-  //   }
-  // }
-
-  @Get('me')
+    @Get('me')
   async getMe(@Req() req: any): Promise<any> {
     try {
       // Get the Facebook token from Authorization header or query params
@@ -187,11 +154,16 @@ export class AuthController {
       
       // Extract token from Authorization header if present (Bearer token format)
       if (authHeader && authHeader.startsWith('Bearer ')) {
-        facebookToken = authHeader.substring(7); // Remove "Bearer " prefix
+        facebookToken = authHeader.substring(7);
       }
       
       if (!facebookToken) {
-        throw new HttpException('Authorization header with Bearer token is required', HttpStatus.BAD_REQUEST);
+        throw new HttpException('Facebook token required', HttpStatus.UNAUTHORIZED);
+      }
+
+      // Validate that it's a Facebook token (starts with EAA)
+      if (!facebookToken.startsWith('EAA')) {
+        throw new HttpException('Invalid Facebook token format', HttpStatus.UNAUTHORIZED);
       }
 
       // Get fresh user data from Facebook Graph API

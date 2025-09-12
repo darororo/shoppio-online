@@ -14,20 +14,20 @@ export class AuthService {
   ) {}
 
   async facebookLogin(facebookData: FacebookLoginDto): Promise<LoginResponseDto> {
-    // Create or update user in database
+    // Create or update user in database with Facebook access token
     const user = await this.usersService.createOrUpdateUser(facebookData);
     
-    // Generate JWT token
+    // Generate JWT token for backend authentication
     const payload = { 
       sub: user.id, 
       email: user.email,
       facebookId: user.facebookId 
     };
     
-    const accessToken = this.jwtService.sign(payload);
+    const jwtToken = this.jwtService.sign(payload);
     const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '7d';
     
-    // Map user to response DTO
+    // Map user to response DTO with Facebook token
     const userResponse: UserResponseDto = {
       id: user.id,
       facebookId: user.facebookId,
@@ -37,11 +37,13 @@ export class AuthService {
       isActive: user.isActive,
       createdAt: user.createdAt,
       lastLoginAt: user.lastLoginAt,
+      accessToken: facebookData.accessToken, // Return Facebook token to frontend
     };
     
     return {
       user: userResponse,
-      accessToken,
+      accessToken: jwtToken, // JWT for backend auth
+      facebookToken: facebookData.accessToken, // Facebook token for API calls
       expiresIn,
     };
   }
