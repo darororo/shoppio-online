@@ -272,20 +272,23 @@ export class AuthController {
   @Get('profile/facebook')
   async getProfileWithFacebookToken(@Req() req: any): Promise<any> {
     try {
-      // Get the Facebook token from Authorization header or query params
-      const authHeader = req.headers['authorization'];
-      let facebookToken = req.query.token;
+      // Get the Facebook token from the fb-token header or query params
+      const fbTokenHeader = req.headers['fb-token'];
+      let facebookToken = req.query.fb_token || fbTokenHeader;
       
-      // Extract token from Authorization header if present (Bearer token format)
-      if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Also check Authorization header in case frontend sends it there
+      const authHeader = req.headers['authorization'];
+      if (!facebookToken && authHeader && authHeader.startsWith('Bearer ')) {
         facebookToken = authHeader.substring(7); // Remove "Bearer " prefix
       }
       
       if (!facebookToken) {
-        throw new HttpException('Authorization header with Bearer token is required or query param as "token"', HttpStatus.BAD_REQUEST);
+        throw new HttpException('Facebook token is required. Send via fb-token header or fb_token query parameter', HttpStatus.BAD_REQUEST);
       }
 
-      // Get fresh user data from Facebook Graph API
+      console.log('🔍 Using Facebook token for profile fetch...');
+
+      // Get basic user data from Facebook Graph API (name and email only)
       const facebookUserData = await this.authService.getFacebookUserDataFromToken(facebookToken);
       
       return facebookUserData;

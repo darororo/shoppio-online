@@ -154,9 +154,9 @@ export class AuthService {
 
   async getFacebookUserDataFromToken(accessToken: string): Promise<any> {
     try {
-      console.log('🔍 Fetching user data from Facebook Graph API with provided token...');
+      console.log('🔍 Fetching basic user data from Facebook Graph API...');
       
-      // First verify the token by getting basic user info
+      // Get only basic user info - name and email
       const userResponse = await fetch(
         `https://graph.facebook.com/me?access_token=${accessToken}&fields=id,name,email,picture.type(large)`
       );
@@ -180,36 +180,12 @@ export class AuthService {
         throw new Error('User not found in our database');
       }
 
-      // Get comprehensive user data from Facebook Graph API
-      const detailedResponse = await fetch(
-        `https://graph.facebook.com/v18.0/me?access_token=${accessToken}&fields=id,name,email,picture.type(large),cover,birthday,location,hometown,relationship_status,about,website,link,locale,timezone,verified,updated_time,friends.summary(true),posts.limit(10).summary(true),likes.summary(true)`
-      );
-      
-      if (!detailedResponse.ok) {
-        const errorData = await detailedResponse.json();
-        console.error('Facebook detailed API error:', errorData);
-        // If detailed request fails, return basic data
-        return {
-          ...userData,
-          dbUser: {
-            id: dbUser.id,
-            facebookId: dbUser.facebookId,
-            name: dbUser.name,
-            email: dbUser.email,
-            profilePicture: dbUser.profilePicture,
-            isActive: dbUser.isActive,
-            createdAt: dbUser.createdAt,
-            lastLoginAt: dbUser.lastLoginAt,
-          }
-        };
-      }
-      
-      const detailedData = await detailedResponse.json();
-      console.log('✅ Detailed Facebook user data retrieved');
-      
-      // Combine Facebook data with our database user info
+      // Return simplified data with only name and email
       return {
-        ...detailedData,
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        picture: userData.picture,
         dbUser: {
           id: dbUser.id,
           facebookId: dbUser.facebookId,

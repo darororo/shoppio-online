@@ -23,7 +23,7 @@ async function bootstrap() {
       'http://127.0.0.1:3001'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'fb-token'],
     credentials: true,
   });
   
