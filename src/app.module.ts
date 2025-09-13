@@ -9,6 +9,7 @@ import { AppService } from './app.service';
 // import { AnalyzedMessagesModule } from './analyzed_messages/analyzed_messages.module';
 // import { OrdersModule } from './orders/orders.module';
 import { AuthModule } from './auth/auth.module';
+import { FacebookModule } from './facebook/facebook.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { getDatabaseConfig } from './database/database.provider';
 // import { SocialAccountModule } from './social_account/social_account.module';
@@ -26,7 +27,8 @@ import { getDatabaseConfig } from './database/database.provider';
       }
     ),
     TypeOrmModule.forRoot(getDatabaseConfig()),
-    AuthModule
+    AuthModule,
+    FacebookModule
     // SocialAccountModule,
     // SocialPagesModule,
     // PostsModule,
