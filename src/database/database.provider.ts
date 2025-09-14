@@ -16,6 +16,12 @@ import { User } from 'src/users/entities/user.entity';
 
 export function getDatabaseConfig(): TypeOrmModuleOptions {
   // Debug: Log environment variables used for DB connection
+  console.log('[DEBUG] Raw environment variables:');
+  console.log('[DEBUG] DATABASE_HOST:', process.env.DATABASE_HOST);
+  console.log('[DEBUG] DATABASE_PORT:', process.env.DATABASE_PORT);
+  console.log('[DEBUG] DB_HOST:', process.env.DB_HOST);
+  console.log('[DEBUG] DB_PORT:', process.env.DB_PORT);
+  
   // Prefer Docker Compose envs (DATABASE_*) over local .env (DB_*) when both exist
   const host = process.env.DATABASE_HOST || process.env.DB_HOST || 'localhost';
   const port = parseInt(process.env.DATABASE_PORT || process.env.DB_PORT || '5432');

@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { FacebookCommentResponse, FacebookCommentsListResponse, FacebookPostCommentsResponse } from './dto/facebook-comment.dto';
 
 export interface FacebookUploadSessionResponse {
   id: string;
@@ -270,6 +271,224 @@ export class FacebookService {
     } catch (error) {
       console.error('❌ Video direct upload failed:', error);
       throw new BadRequestException(`Video direct upload failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Fetch comments for a specific Facebook post
+   * @param postId Facebook post ID
+   * @param accessToken Facebook access token
+   * @param fields Fields to retrieve for comments
+   * @param limit Number of comments to fetch per request
+   * @returns Comments data from Facebook
+   */
+  async fetchPostComments(
+    postId: string, 
+    accessToken: string, 
+    fields: string = 'id,message,created_time,from{id,name},parent',
+    limit: number = 100
+  ): Promise<FacebookCommentsListResponse> {
+    try {
+      console.log(`📥 Fetching comments for post ${postId}...`);
+      
+      const url = `${this.facebookGraphURL}/${postId}/comments`;
+      const params = new URLSearchParams({
+        access_token: accessToken,
+        fields: fields,
+        limit: limit.toString(),
+      });
+
+      const response = await fetch(`${url}?${params}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to fetch comments');
+      }
+
+      const result = await response.json() as FacebookCommentsListResponse;
+      console.log(`📥 Successfully fetched ${result.data?.length || 0} comments`);
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Failed to fetch post comments:', error);
+      throw new BadRequestException(`Failed to fetch post comments: ${error.message}`);
+    }
+  }
+
+  /**
+   * Fetch all comments for a Facebook page's posts
+   * @param pageId Facebook page ID
+   * @param accessToken Facebook access token
+   * @param postLimit Number of posts to fetch
+   * @param commentLimit Number of comments per post
+   * @returns Array of posts with their comments
+   */
+  async fetchPagePostsWithComments(
+    pageId: string,
+    accessToken: string,
+    postLimit: number = 25,
+    commentLimit: number = 100
+  ): Promise<Array<{ postId: string, comments: FacebookCommentsListResponse }>> {
+    try {
+      console.log(`📥 Fetching posts with comments for page ${pageId}...`);
+      
+      // First, get the page's posts
+      const postsUrl = `${this.facebookGraphURL}/${pageId}/posts`;
+      const postsParams = new URLSearchParams({
+        access_token: accessToken,
+        fields: 'id',
+        limit: postLimit.toString(),
+      });
+
+      const postsResponse = await fetch(`${postsUrl}?${postsParams}`);
+      
+      if (!postsResponse.ok) {
+        const error = await postsResponse.json();
+        throw new Error(error.error?.message || 'Failed to fetch posts');
+      }
+
+      const postsResult = await postsResponse.json();
+      const posts = postsResult.data || [];
+
+      console.log(`📥 Found ${posts.length} posts, fetching comments...`);
+
+      // Fetch comments for each post
+      const postsWithComments: Array<{ postId: string, comments: FacebookCommentsListResponse }> = [];
+      for (const post of posts) {
+        try {
+          const comments = await this.fetchPostComments(post.id, accessToken, undefined, commentLimit);
+          postsWithComments.push({
+            postId: post.id,
+            comments: comments
+          });
+        } catch (error) {
+          console.warn(`⚠️ Failed to fetch comments for post ${post.id}:`, error.message);
+          // Continue with other posts even if one fails
+          postsWithComments.push({
+            postId: post.id,
+            comments: { data: [] }
+          });
+        }
+      }
+
+      console.log(`📥 Successfully fetched comments for ${postsWithComments.length} posts`);
+      return postsWithComments;
+    } catch (error) {
+      console.error('❌ Failed to fetch page posts with comments:', error);
+      throw new BadRequestException(`Failed to fetch page posts with comments: ${error.message}`);
+    }
+  }
+
+  /**
+   * Fetch a specific comment by ID
+   * @param commentId Facebook comment ID
+   * @param accessToken Facebook access token
+   * @param fields Fields to retrieve for the comment
+   * @returns Comment data from Facebook
+   */
+  async fetchCommentById(
+    commentId: string,
+    accessToken: string,
+    fields: string = 'id,message,created_time,from{id,name},parent'
+  ): Promise<FacebookCommentResponse> {
+    try {
+      console.log(`📥 Fetching comment ${commentId}...`);
+      
+      const url = `${this.facebookGraphURL}/${commentId}`;
+      const params = new URLSearchParams({
+        access_token: accessToken,
+        fields: fields,
+      });
+
+      const response = await fetch(`${url}?${params}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to fetch comment');
+      }
+
+      const result = await response.json() as FacebookCommentResponse;
+      console.log(`📥 Successfully fetched comment ${commentId}`);
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Failed to fetch comment:', error);
+      throw new BadRequestException(`Failed to fetch comment: ${error.message}`);
+    }
+  }
+
+  /**
+   * Fetch all comments with pagination support
+   * @param postId Facebook post ID
+   * @param accessToken Facebook access token
+   * @param fetchAll Whether to fetch all comments (following pagination)
+   * @returns All comments for the post
+   */
+  async fetchAllPostComments(
+    postId: string,
+    accessToken: string,
+    fetchAll: boolean = true
+  ): Promise<FacebookCommentResponse[]> {
+    try {
+      console.log(`📥 Starting to fetch comments for post: ${postId}`);
+      console.log(`📥 Access token provided: ${accessToken ? 'Yes' : 'No'}`);
+      console.log(`📥 Access token length: ${accessToken?.length || 0}`);
+      
+      const allComments: FacebookCommentResponse[] = [];
+      let nextUrl: string | undefined;
+      let isFirstRequest = true;
+
+      do {
+        let url: string;
+        
+        if (isFirstRequest) {
+          url = `${this.facebookGraphURL}/${postId}/comments`;
+          const params = new URLSearchParams({
+            access_token: accessToken,
+            fields: 'id,message,created_time,from{id,name},parent',
+            limit: '100',
+          });
+          url = `${url}?${params}`;
+          console.log(`📥 First request URL: ${url.replace(accessToken, 'HIDDEN_TOKEN')}`);
+          isFirstRequest = false;
+        } else {
+          url = nextUrl!;
+          console.log(`📥 Pagination request URL: ${url.replace(accessToken, 'HIDDEN_TOKEN')}`);
+        }
+
+        console.log(`📥 Making request to Facebook API...`);
+        const response = await fetch(url);
+        
+        console.log(`📥 Facebook API response status: ${response.status}`);
+        
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('❌ Facebook API error response:', error);
+          throw new Error(error.error?.message || 'Failed to fetch comments');
+        }
+
+        const result = await response.json() as FacebookCommentsListResponse;
+        console.log(`📥 Facebook API response:`, {
+          dataLength: result.data?.length || 0,
+          hasNextPage: !!result.paging?.next,
+          result: result
+        });
+        
+        if (result.data) {
+          allComments.push(...result.data);
+        }
+
+        nextUrl = result.paging?.next;
+        
+        console.log(`📥 Fetched ${result.data?.length || 0} comments, total: ${allComments.length}`);
+        
+      } while (fetchAll && nextUrl);
+
+      console.log(`📥 Finished fetching all comments. Total: ${allComments.length}`);
+      return allComments;
+    } catch (error) {
+      console.error('❌ Failed to fetch all post comments:', error);
+      throw new BadRequestException(`Failed to fetch all post comments: ${error.message}`);
     }
   }
 }

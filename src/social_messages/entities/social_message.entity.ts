@@ -1,5 +1,6 @@
 import { AnalyzedMessage } from 'src/analyzed_messages/entities/analyzed_message.entity';
 import { Buyer } from 'src/buyers/entities/buyer.entity';
+import { Post } from 'src/posts/entities/post.entity';
 import { SocialPage } from 'src/social_pages/entities/social_page.entity';
 import {
   Column,
@@ -21,6 +22,9 @@ export class SocialMessage {
   })
   socialPage: SocialPage;
 
+  @ManyToOne(() => Post, { onDelete: 'SET NULL', nullable: true })
+  post: Post;
+
   @OneToMany(
     () => AnalyzedMessage,
     (analyzedMessage) => analyzedMessage.message,
@@ -34,6 +38,15 @@ export class SocialMessage {
 
   @Column({ type: 'varchar', nullable: true })
   sender_id: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  facebook_comment_id: string; // Facebook's unique comment ID
+
+  @Column({ type: 'varchar', nullable: true })
+  facebook_post_id: string; // Facebook's post ID that this comment belongs to
+
+  @Column({ type: 'varchar', nullable: true })
+  parent_comment_id: string; // For reply comments, the parent comment ID
 
   @Column({ type: 'text', nullable: true })
   message_text: string; // The text content of the message

@@ -16,7 +16,7 @@ import { getDatabaseConfig } from './database/database.provider';
 // import { SocialPagesModule } from './social_pages/social_pages.module';
 // import { PostsModule } from './posts/posts.module';
 // import { PostDistributionsModule } from './post_distributions/post_distributions.module';
-// import { SocialMessagesModule } from './social_messages/social_messages.module';
+import { SocialMessagesModule } from './social_messages/social_messages.module';
 
 @Module({
   imports: [
@@ -28,12 +28,12 @@ import { getDatabaseConfig } from './database/database.provider';
     ),
     TypeOrmModule.forRoot(getDatabaseConfig()),
     AuthModule,
-    FacebookModule
+    FacebookModule,
+    SocialMessagesModule
     // SocialAccountModule,
     // SocialPagesModule,
     // PostsModule,
     // PostDistributionsModule,
-    // SocialMessagesModule,
     // UsersModule,
     // BuyersModule,
     // PagesModule,
