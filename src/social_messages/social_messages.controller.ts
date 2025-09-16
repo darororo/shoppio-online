@@ -1,8 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Headers } from '@nestjs/common';
+import { Controller, Get, Query, Headers, Param } from '@nestjs/common';
 import { SocialMessagesService } from './social_messages.service';
 import { FacebookService } from 'src/facebook/facebook.service';
-import { CreateSocialMessageDto } from './dto/create-social_message.dto';
-import { UpdateSocialMessageDto } from './dto/update-social_message.dto';
 
 @Controller('social-messages')
 export class SocialMessagesController {
@@ -10,31 +8,6 @@ export class SocialMessagesController {
     private readonly socialMessagesService: SocialMessagesService,
     private readonly facebookService: FacebookService,
   ) {}
-
-  @Post()
-  create(@Body() createSocialMessageDto: CreateSocialMessageDto) {
-    return this.socialMessagesService.create(createSocialMessageDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.socialMessagesService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.socialMessagesService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSocialMessageDto: UpdateSocialMessageDto) {
-    return this.socialMessagesService.update(+id, updateSocialMessageDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.socialMessagesService.remove(+id);
-  }
 
   /**
    * Fetch and store comments for a specific Facebook post
@@ -187,93 +160,7 @@ export class SocialMessagesController {
     }
   }
 
-  /**
-   * Get comments by Facebook post ID
-   */
-  @Get('by-facebook-post/:postId')
-  async getCommentsByFacebookPost(@Param('postId') postId: string) {
-    const comments = await this.socialMessagesService.findCommentsByFacebookPostId(postId);
-    return {
-      success: true,
-      data: comments,
-      count: comments.length
-    };
-  }
 
-  /**
-   * Get comments by social page
-   */
-  @Get('by-social-page/:pageId')
-  async getCommentsBySocialPage(@Param('pageId') pageId: string) {
-    const comments = await this.socialMessagesService.findCommentsBySocialPage(pageId);
-    return {
-      success: true,
-      data: comments,
-      count: comments.length
-    };
-  }
-
-  /**
-   * Helper endpoint: Find social page by Facebook page ID
-   */
-  @Get('find-social-page/:facebookPageId')
-  async findSocialPageByFacebookId(@Param('facebookPageId') facebookPageId: string) {
-    try {
-      // This is a temporary helper - you'll need to implement this in your service
-      return {
-        success: false,
-        message: `You need to create a social page record with Facebook page ID: ${facebookPageId}`,
-        help: {
-          issue: "The socialPageId parameter expects an internal UUID, not a Facebook page ID",
-          solution: "Create a SocialPage record in your database first, then use its UUID",
-          facebookPageId: facebookPageId,
-          expectedFormat: "UUID like: 123e4567-e89b-12d3-a456-426614174000"
-        }
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Error finding social page: ${error.message}`,
-        error: error.message
-      };
-    }
-  }
-
-  /**
-   * Helper endpoint: Create a social page record for testing
-   */
-  @Post('create-social-page')
-  async createSocialPage(@Body() body: {
-    facebookPageId: string;
-    pageName?: string;
-    accessToken?: string;
-  }) {
-    try {
-      // Directly insert into database for testing
-      const socialPage = await this.socialMessagesService.createSocialPage({
-        page_id: body.facebookPageId,
-        page_name: body.pageName || `Page ${body.facebookPageId}`,
-        access_token: body.accessToken,
-      });
-
-      return {
-        success: true,
-        message: `Successfully created social page record`,
-        data: {
-          id: socialPage.id,
-          page_id: socialPage.page_id,
-          page_name: socialPage.page_name,
-          usage: `Now use this UUID in your requests: ${socialPage.id}`
-        }
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Error creating social page: ${error.message}`,
-        error: error.message
-      };
-    }
-  }
 
   /**
    * Helper endpoint: Get stored comments for a Facebook post
