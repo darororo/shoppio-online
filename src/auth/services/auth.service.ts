@@ -4,6 +4,7 @@ import { JwtService } from "@nestjs/jwt";
 import { FacebookLoginDto } from "src/users/dto/facebook-login.dto";
 import { LoginResponseDto, UserResponseDto } from "src/users/dto/user-respone.dto";
 import { UsersService } from "src/users/users.service";
+import { TokenSecurityService } from "src/common/services/token-security.service";
 
 @Injectable()
 export class AuthService {
@@ -11,7 +12,11 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+    private tokenSecurityService: TokenSecurityService,
+  ) {
+    // Validate encryption setup on service initialization
+    this.tokenSecurityService.validateEncryptionSetup();
+  }
 
   async facebookLogin(facebookData: FacebookLoginDto): Promise<LoginResponseDto> {
     // Create or update user in database with Facebook access token

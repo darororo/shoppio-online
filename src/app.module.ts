@@ -17,9 +17,11 @@ import { getDatabaseConfig } from './database/database.provider';
 // import { PostsModule } from './posts/posts.module';
 // import { PostDistributionsModule } from './post_distributions/post_distributions.module';
 import { SocialMessagesModule } from './social_messages/social_messages.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
+    CommonModule, // Add security services globally
     ConfigModule.forRoot(
       {
         isGlobal: true,

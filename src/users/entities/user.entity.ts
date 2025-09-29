@@ -3,6 +3,7 @@
 // import { Page } from 'src/pages/entities/page.entity';
 import { Post } from 'src/posts/entities/post.entity';
 import { SocialAccount } from 'src/social_account/entities/social_account.entity';
+import { EncryptionUtil } from 'src/common/utils/encryption.util';
 import {
   Column,
   CreateDateColumn,
@@ -30,7 +31,15 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   profilePicture: string | null;
 
-  @Column({ type: 'varchar', nullable: true })
+  // Encrypted Facebook access token storage
+  @Column({ 
+    type: 'text', 
+    nullable: true,
+    transformer: {
+      to: (value: string) => value ? EncryptionUtil.encrypt(value) : null,
+      from: (value: string) => value ? EncryptionUtil.decrypt(value) : null,
+    },
+  })
   accessToken: string;
 
   @Column({ 
