@@ -21,6 +21,11 @@ import { CommonModule } from './common/common.module';
 import { GeminiService } from './analyzer/gemini.service';
 import { AnalyzerService } from './analyzer/analyzer.service';
 import { AnalyzerModule } from './analyzer/analyzer.module';
+import { TelegramBotModule } from './telegram_bot/telegram_bot.module';
+import { Telegraf } from 'telegraf';
+import { TelegrafModule } from 'nestjs-telegraf';
+import { telegrafSessionMiddleware } from 'middleware/telegraf-session.middleware';
+import { SHOPPIO_BOT_NAME } from './telegram_bot/telegram_bot.constants';
 
 @Module({
   imports: [
@@ -36,6 +41,23 @@ import { AnalyzerModule } from './analyzer/analyzer.module';
     FacebookModule,
     SocialMessagesModule,
     AnalyzerModule,
+
+    // Telegram bots
+    TelegrafModule.forRootAsync({
+      botName: SHOPPIO_BOT_NAME,
+      useFactory: () => ({
+        token: process.env.SHOPPIO_BOT_TOKEN?.toString() || "",
+        middlewares: [telegrafSessionMiddleware],
+        include: [TelegramBotModule],
+        // launchOptions: {
+        //   webhook: {
+        //     domain: process.env.BACKEND_HOST?.toString() || "",
+        //     path: ''
+        //   }
+        // }
+      }),
+    }),
+    TelegramBotModule,
     // SocialAccountModule,
     // SocialPagesModule,
     // PostsModule,
