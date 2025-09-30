@@ -1,5 +1,11 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { FacebookCommentResponse, FacebookCommentsListResponse, FacebookPostCommentsResponse } from './dto/facebook-comment.dto';
+import { 
+  FacebookConversationResponse, 
+  FacebookConversationsListResponse, 
+  FacebookMessageResponse, 
+  FacebookMessagesListResponse 
+} from './dto/facebook-conversation.dto';
 
 export interface FacebookUploadSessionResponse {
   id: string;
@@ -489,6 +495,370 @@ export class FacebookService {
     } catch (error) {
       console.error('❌ Failed to fetch all post comments:', error);
       throw new BadRequestException(`Failed to fetch all post comments: ${error.message}`);
+    }
+  }
+
+  /**
+   * Fetch all conversations for a Facebook page using Messenger Platform API
+   * @param pageId Facebook page ID
+   * @param pageAccessToken Page access token with messaging permissions
+   * @param platform Platform type ('messenger' or 'instagram')
+   * @param limit Number of conversations to fetch per request (default: 100)
+   * @returns List of conversations with their IDs and last update time
+   */
+  async fetchPageConversations(
+    pageId: string,
+    pageAccessToken: string,
+    platform: 'messenger' | 'instagram' = 'messenger',
+    limit: number = 100
+  ): Promise<FacebookConversationsListResponse> {
+    try {
+      console.log(`💬 Fetching conversations for page ${pageId} on ${platform}...`);
+      
+      const url = `${this.facebookGraphURL}/${pageId}/conversations`;
+      const params = new URLSearchParams({
+        access_token: pageAccessToken,
+        platform: platform,
+        limit: limit.toString(),
+      });
+
+      const response = await fetch(`${url}?${params}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Facebook API error response:', error);
+        throw new Error(error.error?.message || 'Failed to fetch conversations');
+      }
+
+      const result = await response.json() as FacebookConversationsListResponse;
+      console.log(`💬 Successfully fetched ${result.data?.length || 0} conversations`);
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Failed to fetch page conversations:', error);
+      throw new BadRequestException(`Failed to fetch page conversations: ${error.message}`);
+    }
+  }
+
+  /**
+   * Fetch all conversations with pagination support
+   * @param pageId Facebook page ID
+   * @param pageAccessToken Page access token with messaging permissions
+   * @param platform Platform type ('messenger' or 'instagram')
+   * @param fetchAll Whether to fetch all conversations (following pagination)
+   * @returns All conversations for the page
+   */
+  async fetchAllPageConversations(
+    pageId: string,
+    pageAccessToken: string,
+    platform: 'messenger' | 'instagram' = 'messenger',
+    fetchAll: boolean = true
+  ): Promise<FacebookConversationResponse[]> {
+    try {
+      console.log(`💬 Starting to fetch all conversations for page: ${pageId} on ${platform}`);
+      
+      const allConversations: FacebookConversationResponse[] = [];
+      let nextUrl: string | undefined;
+      let isFirstRequest = true;
+
+      do {
+        let url: string;
+        
+        if (isFirstRequest) {
+          url = `${this.facebookGraphURL}/${pageId}/conversations`;
+          const params = new URLSearchParams({
+            access_token: pageAccessToken,
+            platform: platform,
+            limit: '100',
+          });
+          url = `${url}?${params}`;
+          console.log(`💬 First request URL: ${url.replace(pageAccessToken, 'HIDDEN_TOKEN')}`);
+          isFirstRequest = false;
+        } else {
+          url = nextUrl!;
+          console.log(`💬 Pagination request URL: ${url.replace(pageAccessToken, 'HIDDEN_TOKEN')}`);
+        }
+
+        console.log(`💬 Making request to Facebook API...`);
+        const response = await fetch(url);
+        
+        console.log(`💬 Facebook API response status: ${response.status}`);
+        
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('❌ Facebook API error response:', error);
+          throw new Error(error.error?.message || 'Failed to fetch conversations');
+        }
+
+        const result = await response.json() as FacebookConversationsListResponse;
+        console.log(`💬 Facebook API response:`, {
+          dataLength: result.data?.length || 0,
+          hasNextPage: !!result.paging?.next,
+        });
+        
+        if (result.data) {
+          allConversations.push(...result.data);
+        }
+
+        nextUrl = result.paging?.next;
+        
+        console.log(`💬 Fetched ${result.data?.length || 0} conversations, total: ${allConversations.length}`);
+        
+      } while (fetchAll && nextUrl);
+
+      console.log(`💬 Finished fetching all conversations. Total: ${allConversations.length}`);
+      return allConversations;
+    } catch (error) {
+      console.error('❌ Failed to fetch all page conversations:', error);
+      throw new BadRequestException(`Failed to fetch all page conversations: ${error.message}`);
+    }
+  }
+
+  /**
+   * Find a specific conversation with a user
+   * @param pageId Facebook page ID
+   * @param pageAccessToken Page access token with messaging permissions
+   * @param userId Instagram-scoped ID or Page-scoped ID for the user
+   * @param platform Platform type ('messenger' or 'instagram')
+   * @returns Conversation ID if found
+   */
+  async findConversationWithUser(
+    pageId: string,
+    pageAccessToken: string,
+    userId: string,
+    platform: 'messenger' | 'instagram' = 'messenger'
+  ): Promise<FacebookConversationResponse | null> {
+    try {
+      console.log(`💬 Finding conversation between page ${pageId} and user ${userId} on ${platform}...`);
+      
+      const url = `${this.facebookGraphURL}/${pageId}/conversations`;
+      const params = new URLSearchParams({
+        access_token: pageAccessToken,
+        platform: platform,
+        user_id: userId,
+      });
+
+      const response = await fetch(`${url}?${params}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Facebook API error response:', error);
+        throw new Error(error.error?.message || 'Failed to find conversation');
+      }
+
+      const result = await response.json() as FacebookConversationsListResponse;
+      
+      if (result.data && result.data.length > 0) {
+        console.log(`💬 Found conversation: ${result.data[0].id}`);
+        return result.data[0];
+      } else {
+        console.log(`💬 No conversation found between page ${pageId} and user ${userId}`);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Failed to find conversation with user:', error);
+      throw new BadRequestException(`Failed to find conversation with user: ${error.message}`);
+    }
+  }
+
+  /**
+   * Fetch messages in a conversation
+   * @param conversationId Conversation ID
+   * @param pageAccessToken Page access token with messaging permissions
+   * @param limit Number of messages to fetch (default: 100)
+   * @returns List of messages in the conversation
+   */
+  async fetchConversationMessages(
+    conversationId: string,
+    pageAccessToken: string,
+    limit: number = 100
+  ): Promise<FacebookMessagesListResponse> {
+    try {
+      console.log(`💬 Fetching messages for conversation ${conversationId}...`);
+      
+      const url = `${this.facebookGraphURL}/${conversationId}`;
+      const params = new URLSearchParams({
+        access_token: pageAccessToken,
+        fields: 'messages',
+        limit: limit.toString(),
+      });
+
+      const response = await fetch(`${url}?${params}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Facebook API error response:', error);
+        throw new Error(error.error?.message || 'Failed to fetch conversation messages');
+      }
+
+      const result = await response.json() as { messages: FacebookMessagesListResponse, id: string };
+      console.log(`💬 Successfully fetched ${result.messages?.data?.length || 0} messages`);
+      
+      return result.messages;
+    } catch (error) {
+      console.error('❌ Failed to fetch conversation messages:', error);
+      throw new BadRequestException(`Failed to fetch conversation messages: ${error.message}`);
+    }
+  }
+
+  /**
+   * Fetch detailed information about a specific message
+   * @param messageId Message ID
+   * @param pageAccessToken Page access token with messaging permissions
+   * @param fields Fields to retrieve for the message
+   * @returns Detailed message information
+   */
+  async fetchMessageDetails(
+    messageId: string,
+    pageAccessToken: string,
+    fields: string = 'id,created_time,from,to,message'
+  ): Promise<FacebookMessageResponse> {
+    try {
+      console.log(`💬 Fetching details for message ${messageId}...`);
+      
+      const url = `${this.facebookGraphURL}/${messageId}`;
+      const params = new URLSearchParams({
+        access_token: pageAccessToken,
+        fields: fields,
+      });
+
+      const response = await fetch(`${url}?${params}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Facebook API error response:', error);
+        throw new Error(error.error?.message || 'Failed to fetch message details');
+      }
+
+      const result = await response.json() as FacebookMessageResponse;
+      console.log(`💬 Successfully fetched message details for ${messageId}`);
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Failed to fetch message details:', error);
+      throw new BadRequestException(`Failed to fetch message details: ${error.message}`);
+    }
+  }
+
+  /**
+   * Fetch all messages in a conversation with pagination support
+   * @param conversationId Conversation ID
+   * @param pageAccessToken Page access token with messaging permissions
+   * @param fetchAll Whether to fetch all messages (following pagination)
+   * @returns All messages in the conversation with details
+   */
+  async fetchAllConversationMessages(
+    conversationId: string,
+    pageAccessToken: string,
+    fetchAll: boolean = true
+  ): Promise<FacebookMessageResponse[]> {
+    try {
+      console.log(`💬 Starting to fetch all messages for conversation: ${conversationId}`);
+      
+      // First get all message IDs
+      const allMessageIds: { id: string, created_time: string }[] = [];
+      let nextUrl: string | undefined;
+      let isFirstRequest = true;
+
+      do {
+        let url: string;
+        
+        if (isFirstRequest) {
+          url = `${this.facebookGraphURL}/${conversationId}`;
+          const params = new URLSearchParams({
+            access_token: pageAccessToken,
+            fields: 'messages',
+          });
+          url = `${url}?${params}`;
+          isFirstRequest = false;
+        } else {
+          url = nextUrl!;
+        }
+
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error?.message || 'Failed to fetch messages');
+        }
+
+        const result = await response.json() as { messages: FacebookMessagesListResponse, id: string };
+        
+        if (result.messages?.data) {
+          allMessageIds.push(...result.messages.data);
+        }
+
+        nextUrl = result.messages?.paging?.next;
+        
+        console.log(`💬 Fetched ${result.messages?.data?.length || 0} message IDs, total: ${allMessageIds.length}`);
+        
+      } while (fetchAll && nextUrl);
+
+      // Now fetch details for the most recent 20 messages (API limitation)
+      const recentMessageIds = allMessageIds.slice(0, 20);
+      const messagesWithDetails: FacebookMessageResponse[] = [];
+
+      console.log(`💬 Fetching details for ${recentMessageIds.length} most recent messages...`);
+
+      for (const messageInfo of recentMessageIds) {
+        try {
+          const messageDetails = await this.fetchMessageDetails(messageInfo.id, pageAccessToken);
+          messagesWithDetails.push(messageDetails);
+        } catch (error) {
+          console.warn(`⚠️ Failed to fetch details for message ${messageInfo.id}:`, error.message);
+          // Add basic message info even if details fetch fails
+          messagesWithDetails.push({
+            id: messageInfo.id,
+            created_time: messageInfo.created_time,
+            message: 'Unable to fetch message details - may be older than 20 most recent messages'
+          } as FacebookMessageResponse);
+        }
+      }
+
+      console.log(`💬 Finished fetching message details. Total messages: ${allMessageIds.length}, with details: ${messagesWithDetails.length}`);
+      return messagesWithDetails;
+    } catch (error) {
+      console.error('❌ Failed to fetch all conversation messages:', error);
+      throw new BadRequestException(`Failed to fetch all conversation messages: ${error.message}`);
+    }
+  }
+
+  /**
+   * Fetch conversation participants to get page-scoped IDs
+   * @param conversationId Conversation ID
+   * @param pageAccessToken Page access token with messaging permissions
+   * @param fields Fields to retrieve for the conversation
+   * @returns Conversation details with participants
+   */
+  async fetchConversationParticipants(
+    conversationId: string,
+    pageAccessToken: string,
+    fields: string = 'id,name,participants'
+  ): Promise<any> {
+    try {
+      console.log(`💬 Fetching participants for conversation ${conversationId}...`);
+      
+      const url = `${this.facebookGraphURL}/${conversationId}`;
+      const params = new URLSearchParams({
+        access_token: pageAccessToken,
+        fields: fields,
+      });
+
+      const response = await fetch(`${url}?${params}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Facebook API error response:', error);
+        throw new Error(error.error?.message || 'Failed to fetch conversation participants');
+      }
+
+      const result = await response.json();
+      console.log(`💬 Successfully fetched conversation participants for ${conversationId}`);
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Failed to fetch conversation participants:', error);
+      throw new BadRequestException(`Failed to fetch conversation participants: ${error.message}`);
     }
   }
 }

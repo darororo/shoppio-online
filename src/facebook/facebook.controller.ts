@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Param, Query, Body, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FacebookService, FacebookUploadResult } from './facebook.service';
 
@@ -101,5 +101,85 @@ export class FacebookController {
 
     const options = { title, description };
     return this.facebookService.postVideoWithDirectUpload(pageId, pageAccessToken, file, options);
+  }
+
+  // 1. Get a List of Conversations
+  // GET /facebook/conversations/:pageId?platform=PLATFORM&access_token=PAGE-ACCESS-TOKEN
+  @Get('conversations/:pageId')
+  async getConversations(
+    @Param('pageId') pageId: string,
+    @Query('platform') platform: 'messenger' | 'instagram' = 'messenger',
+    @Query('access_token') accessToken: string,
+    @Query('limit') limit: string = '100',
+  ) {
+    if (!pageId || !accessToken) {
+      throw new BadRequestException('Page ID and access_token are required');
+    }
+
+    const limitNum = parseInt(limit, 10);
+    return this.facebookService.fetchPageConversations(pageId, accessToken, platform, limitNum);
+  }
+
+  // 2. Find a Conversation with a Specific User
+  // GET /facebook/conversations/:pageId/user?platform=PLATFORM&user_id=USER-SCOPED-ID&access_token=PAGE-ACCESS-TOKEN
+  @Get('conversations/:pageId/user')
+  async findConversationWithUser(
+    @Param('pageId') pageId: string,
+    @Query('platform') platform: 'messenger' | 'instagram' = 'messenger',
+    @Query('user_id') userId: string,
+    @Query('access_token') accessToken: string,
+  ) {
+    if (!pageId || !accessToken || !userId) {
+      throw new BadRequestException('Page ID, user_id, and access_token are required');
+    }
+
+    return this.facebookService.findConversationWithUser(pageId, accessToken, userId, platform);
+  }
+
+  // 3. Get a List of Messages in a Conversation
+  // GET /facebook/conversation/:conversationId?fields=messages&access_token=PAGE-ACCESS-TOKEN
+  @Get('conversation/:conversationId')
+  async getConversationMessages(
+    @Param('conversationId') conversationId: string,
+    @Query('fields') fields: string = 'messages',
+    @Query('access_token') accessToken: string,
+    @Query('limit') limit: string = '100',
+  ) {
+    if (!conversationId || !accessToken) {
+      throw new BadRequestException('Conversation ID and access_token are required');
+    }
+
+    const limitNum = parseInt(limit, 10);
+    return this.facebookService.fetchConversationMessages(conversationId, accessToken, limitNum);
+  }
+
+  // 4. Get Information about a Message
+  // GET /facebook/message/:messageId?fields=id,created_time,from,to,message&access_token=PAGE-ACCESS-TOKEN
+  @Get('message/:messageId')
+  async getMessageDetails(
+    @Param('messageId') messageId: string,
+    @Query('fields') fields: string = 'id,created_time,from,to,message',
+    @Query('access_token') accessToken: string,
+  ) {
+    if (!messageId || !accessToken) {
+      throw new BadRequestException('Message ID and access_token are required');
+    }
+
+    return this.facebookService.fetchMessageDetails(messageId, accessToken, fields);
+  }
+
+  // 5. Find Page Scope ID (for conversation participants)
+  // GET /facebook/conversation/:conversationId/participants?fields=id,name,participants&access_token=PAGE-ACCESS-TOKEN
+  @Get('conversation/:conversationId/participants')
+  async getConversationParticipants(
+    @Param('conversationId') conversationId: string,
+    @Query('fields') fields: string = 'id,name,participants',
+    @Query('access_token') accessToken: string,
+  ) {
+    if (!conversationId || !accessToken) {
+      throw new BadRequestException('Conversation ID and access_token are required');
+    }
+
+    return this.facebookService.fetchConversationParticipants(conversationId, accessToken, fields);
   }
 }
