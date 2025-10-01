@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { IntentionEnum } from 'src/analyzed_messages/enum/intention_enum';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 export interface AnalysisResult {
   intent: IntentionEnum;
@@ -16,7 +16,7 @@ export interface AnalysisResult {
 @Injectable()
 export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
-  private readonly genAI: GoogleGenerativeAI;
+  private readonly genAI: GoogleGenAI;
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
@@ -24,20 +24,25 @@ export class GeminiService {
       throw new Error('GEMINI_API_KEY is required');
     }
 
-    this.genAI = new GoogleGenerativeAI(apiKey);
+    this.genAI = new GoogleGenAI({ apiKey: apiKey });
   }
 
   async analyzeMessage(message: string): Promise<AnalysisResult> {
     try {
       const prompt = this.createAnalysisPrompt(message);
 
-      const model = this.genAI.getGenerativeModel({
+      // const model = this.genAI.models.generateContent({
+      //   model:
+      //     this.configService.get<string>('GEMINI_MODEL') || 'gemini-1.5-flash',
+      //     contents: ""
+      // });
+
+      const result = await this.genAI.models.generateContent({
         model:
           this.configService.get<string>('GEMINI_MODEL') || 'gemini-1.5-flash',
+        contents: prompt
       });
-
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
+      const text = result.text;
 
       if (!text) {
         throw new Error('No response from Gemini');
