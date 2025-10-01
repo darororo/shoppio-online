@@ -26,6 +26,7 @@ import { Telegraf } from 'telegraf';
 import { TelegrafModule } from 'nestjs-telegraf';
 import { telegrafSessionMiddleware } from 'middleware/telegraf-session.middleware';
 import { SHOPPIO_BOT_NAME } from './telegram_bot/telegram_bot.constants';
+import { OllamaAiModule } from './ollama_ai/ollama_ai.module';
 
 @Module({
   imports: [
@@ -56,6 +57,11 @@ import { SHOPPIO_BOT_NAME } from './telegram_bot/telegram_bot.constants';
         //   }
         // }
       }),
+    }),
+    OllamaAiModule.register({
+      host: process.env.OLLAMA_HOST || '',
+      model: 'granite3.3:2b',
+      apiKey: process.env.OLLAMA_API_KEY || '',
     }),
     TelegramBotModule,
     // SocialAccountModule,

@@ -5,9 +5,13 @@ import { UpdateType } from './decorator/update_type.decorator';
 import { UpdateType as TelegrafUpdateType } from 'node_modules/telegraf/typings/telegram-types';
 import { Telegraf } from 'telegraf';
 import { TelegramBotService } from './telegram_bot.service';
+import { OllamaAiService } from 'src/ollama_ai/ollama_ai.service';
+import { Inject, Injectable } from '@nestjs/common';
+import { OLLAMA_SERVICE } from 'src/ollama_ai/ollama_ai.constants';
 
 @Update()
 export class TelegramBotUpdate {
+    constructor(@Inject(OLLAMA_SERVICE) private readonly ollama: OllamaAiService) { }
     @Start()
     async startCommand(@Ctx() ctx: Context,
         @UpdateType() updateType: TelegrafUpdateType,
@@ -20,15 +24,22 @@ export class TelegramBotUpdate {
     }
 
 
-    @Hears(['hi', 'hello', 'hey', 'qq'])
-    onGreetings(
+    @Hears(['hi', 'hello', 'hey', 'qq', /\w+/g])
+    async onGreetings(
         @Ctx() ctx: Context,
         @UpdateType() updateType: TelegrafUpdateType,
         @Sender('first_name') firstName: string,
         @Sender('last_name') lastName: string,
-    ): string {
+    ) {
+        // if (updateType != 'message') return;
 
-        return `Hey ${firstName} ${lastName} ${updateType}`;
+        console.log('onGreetings')
+
+        const text = ctx.text
+        const result = await this.ollama.sendPrompt(text || 'hello');
+        console.log(result)
+
+        return `Hey ${firstName} ${lastName} ${result}`;
     }
 
 
