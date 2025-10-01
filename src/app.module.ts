@@ -13,7 +13,7 @@ import { FacebookModule } from './facebook/facebook.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { getDatabaseConfig } from './database/database.provider';
 // import { SocialAccountModule } from './social_account/social_account.module';
-// import { SocialPagesModule } from './social_pages/social_pages.module';
+import { SocialPagesModule } from './social_pages/social_pages.module';
 // import { PostsModule } from './posts/posts.module';
 // import { PostDistributionsModule } from './post_distributions/post_distributions.module';
 import { SocialMessagesModule } from './social_messages/social_messages.module';
@@ -65,7 +65,7 @@ import { OllamaAiModule } from './ollama_ai/ollama_ai.module';
     }),
     TelegramBotModule,
     // SocialAccountModule,
-    // SocialPagesModule,
+    SocialPagesModule,
     // PostsModule,
     // PostDistributionsModule,
     // UsersModule,
