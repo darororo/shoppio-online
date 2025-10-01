@@ -3,14 +3,23 @@ import { IntentionEnum } from '../enum/intention_enum';
 
 export class CreateAnalyzedMessageDto {
   @IsString()
-  phone_number: string;
+  buyerId: string;
 
   @IsString()
-  location: string;
+  buyerName: string;
+
+  @IsString()
+  phoneNumber?: string;
+
+  @IsString()
+  location?: string;
+
+  @IsString()
+  analysisNote: string;
 
   @IsNotEmpty()
   @IsNumber()
-  intention_score: number;
+  confidence_score: number;
 
   @IsNotEmpty()
   @IsEnum(IntentionEnum)

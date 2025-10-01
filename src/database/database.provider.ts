@@ -21,19 +21,24 @@ export function getDatabaseConfig(): TypeOrmModuleOptions {
   console.log('[DEBUG] DATABASE_PORT:', process.env.DATABASE_PORT);
   console.log('[DEBUG] DB_HOST:', process.env.DB_HOST);
   console.log('[DEBUG] DB_PORT:', process.env.DB_PORT);
-  
+
   // Prefer Docker Compose envs (DATABASE_*) over local .env (DB_*) when both exist
   const host = process.env.DATABASE_HOST || process.env.DB_HOST || 'localhost';
-  const port = parseInt(process.env.DATABASE_PORT || process.env.DB_PORT || '5432');
-  const username = process.env.DATABASE_USER || process.env.DB_USERNAME || 'postgres';
-  const password = process.env.DATABASE_PASSWORD || process.env.DB_PASSWORD || '';
+  const port = parseInt(
+    process.env.DATABASE_PORT || process.env.DB_PORT || '5432',
+  );
+  const username =
+    process.env.DATABASE_USER || process.env.DB_USERNAME || 'postgres';
+  const password =
+    process.env.DATABASE_PASSWORD || process.env.DB_PASSWORD || '';
   const database = process.env.DATABASE_NAME || process.env.DB_NAME || '';
 
   console.log('[DB CONFIG] host:', host);
   console.log('[DB CONFIG] port:', port);
   console.log('[DB CONFIG] username:', username);
   console.log('[DB CONFIG] database:', database);
-  const rawSchema = process.env.DATABASE_SCHEMA || process.env.DB_SCHEMA || 'public';
+  const rawSchema =
+    process.env.DATABASE_SCHEMA || process.env.DB_SCHEMA || 'public';
   const schema = rawSchema.replace(/^['"]|['"]$/g, '');
   console.log('[DB CONFIG] schema:', schema);
 
@@ -44,7 +49,17 @@ export function getDatabaseConfig(): TypeOrmModuleOptions {
     username,
     password,
     database,
-    entities: [User, Post, SocialAccount, SocialMessage,SocialPage,AnalyzedMessage, PostDistribution, Buyer, Order],
+    entities: [
+      User,
+      Post,
+      SocialAccount,
+      SocialMessage,
+      SocialPage,
+      AnalyzedMessage,
+      PostDistribution,
+      Buyer,
+      Order,
+    ],
     // Set synchronize to true for development only. NEVER use true in production!
     synchronize: process.env.NODE_ENV !== 'production',
     logging: process.env.NODE_ENV === 'development',
@@ -54,8 +69,8 @@ export function getDatabaseConfig(): TypeOrmModuleOptions {
         : false,
     retryAttempts: 3,
     retryDelay: 3000,
-  // Don't drop schema by default; preserves local DB when restarting dev containers
-  dropSchema: false,
-  schema,
+    // Don't drop schema by default; preserves local DB when restarting dev containers
+    dropSchema: false,
+    schema,
   };
 }

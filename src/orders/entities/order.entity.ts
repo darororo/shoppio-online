@@ -10,9 +10,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { StatusEnum } from '../enum/status_enum';
- // this table used when analyzed by AI message contain order information
+// this table used when analyzed by AI message contain order information
 @Entity()
-export class Order {  // orders created from analyzed messages 
+export class Order {
+  // orders created from analyzed messages
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -22,7 +23,7 @@ export class Order {  // orders created from analyzed messages
   @Column()
   quantity: number;
 
-  @Column({ type: 'enum', enum: StatusEnum })
+  @Column({ type: 'enum', enum: StatusEnum, default: StatusEnum.PENDING })
   status: StatusEnum;
 
   @CreateDateColumn()
@@ -31,7 +32,10 @@ export class Order {  // orders created from analyzed messages
   @UpdateDateColumn()
   update_at: Date;
 
-  @ManyToOne(() => AnalyzedMessage, (analyzed_message) => analyzed_message.orders)
+  @ManyToOne(
+    () => AnalyzedMessage,
+    (analyzed_message) => analyzed_message.orders,
+  )
   analyzed_message: AnalyzedMessage;
 
   @ManyToOne(() => Buyer, (buyer) => buyer.order)

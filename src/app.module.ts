@@ -3,11 +3,11 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 // import { UsersModule } from './users/users.module';
-// import { BuyersModule } from './buyers/buyers.module';
+import { BuyersModule } from './buyers/buyers.module';
 // import { PagesModule } from './pages/pages.module';
 // import { MessagesModule } from './messages/messages.module';
-// import { AnalyzedMessagesModule } from './analyzed_messages/analyzed_messages.module';
-// import { OrdersModule } from './orders/orders.module';
+import { AnalyzedMessagesModule } from './analyzed_messages/analyzed_messages.module';
+import { OrdersModule } from './orders/orders.module';
 import { AuthModule } from './auth/auth.module';
 import { FacebookModule } from './facebook/facebook.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -18,6 +18,9 @@ import { getDatabaseConfig } from './database/database.provider';
 // import { PostDistributionsModule } from './post_distributions/post_distributions.module';
 import { SocialMessagesModule } from './social_messages/social_messages.module';
 import { CommonModule } from './common/common.module';
+import { GeminiService } from './analyzer/gemini.service';
+import { AnalyzerService } from './analyzer/analyzer.service';
+import { AnalyzerModule } from './analyzer/analyzer.module';
 
 @Module({
   imports: [
@@ -31,21 +34,22 @@ import { CommonModule } from './common/common.module';
     TypeOrmModule.forRoot(getDatabaseConfig()),
     AuthModule,
     FacebookModule,
-    SocialMessagesModule
+    SocialMessagesModule,
+    AnalyzerModule,
     // SocialAccountModule,
     // SocialPagesModule,
     // PostsModule,
     // PostDistributionsModule,
     // UsersModule,
-    // BuyersModule,
+    BuyersModule,
     // PagesModule,
     // MessagesModule,
-    // AnalyzedMessagesModule,
-    // OrdersModule,
+    AnalyzedMessagesModule,
+    OrdersModule,
     // AuthModule,
   ],
   // imports: [UsersModule, BuyersModule, PagesModule, MessagesModule, AnalyzedMessagesModule, OrdersModule, AuthModule],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, GeminiService, AnalyzerService],
 })
-export class AppModule {}
+export class AppModule { }

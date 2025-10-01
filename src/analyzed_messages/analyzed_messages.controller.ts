@@ -1,30 +1,66 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  NotFoundException,
+} from '@nestjs/common';
 import { AnalyzedMessagesService } from './analyzed_messages.service';
 import { CreateAnalyzedMessageDto } from './dto/create-analyzed_message.dto';
 import { UpdateAnalyzedMessageDto } from './dto/update-analyzed_message.dto';
+import { AnalyzedMessage } from './entities/analyzed_message.entity';
 
 @Controller('analyzed-messages')
 export class AnalyzedMessagesController {
-  constructor(private readonly analyzedMessagesService: AnalyzedMessagesService) {}
+  constructor(
+    private readonly analyzedMessagesService: AnalyzedMessagesService,
+  ) {}
 
   @Post()
-  create(@Body() createAnalyzedMessageDto: CreateAnalyzedMessageDto) {
-    return this.analyzedMessagesService.create(createAnalyzedMessageDto);
+  async create(
+    @Body() createAnalyzedMessageDto: CreateAnalyzedMessageDto,
+  ): Promise<AnalyzedMessage> {
+    return await this.analyzedMessagesService.create(createAnalyzedMessageDto);
   }
 
   @Get()
-  findAll() {
-    return this.analyzedMessagesService.findAll();
+  async findAll(): Promise<AnalyzedMessage[]> {
+    return await this.analyzedMessagesService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.analyzedMessagesService.findOne(+id);
+  async findOne(
+    @Param('id', ParseIntPipe) id: string,
+  ): Promise<AnalyzedMessage> {
+    const data = await this.analyzedMessagesService.findOne(id);
+
+    if (!data) {
+      throw new NotFoundException(`Analyzed Message with ID ${id} not found`);
+    }
+
+    return data;
+  }
+
+  @Get('message/:messageId')
+  async findByMessageId(
+    @Param('messageId') messageId: string,
+  ): Promise<AnalyzedMessage[]> {
+    return this.analyzedMessagesService.findByMessageId(messageId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAnalyzedMessageDto: UpdateAnalyzedMessageDto) {
-    return this.analyzedMessagesService.update(+id, updateAnalyzedMessageDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateAnalyzedMessageDto: UpdateAnalyzedMessageDto,
+  ): Promise<AnalyzedMessage> {
+    return this.analyzedMessagesService.update(
+      String(id),
+      updateAnalyzedMessageDto,
+    );
   }
 
   @Delete(':id')

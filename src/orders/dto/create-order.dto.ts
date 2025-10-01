@@ -2,15 +2,12 @@ import { IsEnum, IsInt, IsNotEmpty, IsString } from 'class-validator';
 import { StatusEnum } from '../enum/status_enum';
 
 export class CreateOrderDto {
-  @IsNotEmpty()
   @IsString()
-  product_name: string;
+  product_name?: string;
 
-  @IsNotEmpty()
   @IsInt()
-  quantity: number;
+  quantity?: number;
 
-  @IsNotEmpty()
-  @IsEnum(StatusEnum)
-  status: StatusEnum;
+  // @IsEnum(StatusEnum)
+  // status: StatusEnum;
 }

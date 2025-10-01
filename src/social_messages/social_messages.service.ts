@@ -44,10 +44,12 @@ export class SocialMessagesService {
   /**
    * Create a social message from Facebook comment data
    */
-  async createFromFacebookComment(dto: CreateSocialMessageFromCommentDto): Promise<SocialMessage> {
+  async createFromFacebookComment(
+    dto: CreateSocialMessageFromCommentDto,
+  ): Promise<SocialMessage> {
     // Find the social page
     const socialPage = await this.socialPageRepository.findOne({
-      where: { id: dto.social_page_id }
+      where: { id: dto.social_page_id },
     });
 
     if (!socialPage) {
@@ -58,7 +60,7 @@ export class SocialMessagesService {
     let post: Post | null = null;
     if (dto.post_id) {
       post = await this.postRepository.findOne({
-        where: { id: dto.post_id }
+        where: { id: dto.post_id },
       });
     }
 
@@ -85,7 +87,7 @@ export class SocialMessagesService {
     comments: FacebookCommentResponse[],
     socialPageId: string,
     facebookPostId: string,
-    postId?: string
+    postId?: string,
   ): Promise<SocialMessage[]> {
     const savedMessages: SocialMessage[] = [];
 
@@ -93,7 +95,7 @@ export class SocialMessagesService {
       try {
         // Check if comment already exists
         const existingMessage = await this.socialMessageRepository.findOne({
-          where: { facebook_comment_id: comment.id }
+          where: { facebook_comment_id: comment.id },
         });
 
         if (existingMessage) {
@@ -113,10 +115,13 @@ export class SocialMessagesService {
 
         const savedMessage = await this.createFromFacebookComment(dto);
         savedMessages.push(savedMessage);
-        
+
         console.log(`💾 Saved comment ${comment.id} to database`);
       } catch (error) {
-        console.error(`❌ Failed to save comment ${comment.id}:`, error.message);
+        console.error(
+          `❌ Failed to save comment ${comment.id}:`,
+          error.message,
+        );
         // Continue with other comments even if one fails
       }
     }
@@ -127,38 +132,44 @@ export class SocialMessagesService {
   /**
    * Find comments by Facebook post ID
    */
-  async findCommentsByFacebookPostId(facebookPostId: string): Promise<SocialMessage[]> {
+  async findCommentsByFacebookPostId(
+    facebookPostId: string,
+  ): Promise<SocialMessage[]> {
     return await this.socialMessageRepository.find({
-      where: { 
+      where: {
         facebook_post_id: facebookPostId,
-        message_type: MessageType.COMMENT 
+        message_type: MessageType.COMMENT,
       },
       relations: ['socialPage', 'post', 'buyer'],
-      order: { received_at: 'DESC' }
+      order: { received_at: 'DESC' },
     });
   }
 
   /**
    * Find comments by social page
    */
-  async findCommentsBySocialPage(socialPageId: string): Promise<SocialMessage[]> {
+  async findCommentsBySocialPage(
+    socialPageId: string,
+  ): Promise<SocialMessage[]> {
     return await this.socialMessageRepository.find({
-      where: { 
+      where: {
         socialPage: { id: socialPageId },
-        message_type: MessageType.COMMENT 
+        message_type: MessageType.COMMENT,
       },
       relations: ['socialPage', 'post', 'buyer'],
-      order: { received_at: 'DESC' }
+      order: { received_at: 'DESC' },
     });
   }
 
   /**
    * Find comment by Facebook comment ID
    */
-  async findByFacebookCommentId(facebookCommentId: string): Promise<SocialMessage | null> {
+  async findByFacebookCommentId(
+    facebookCommentId: string,
+  ): Promise<SocialMessage | null> {
     return await this.socialMessageRepository.findOne({
       where: { facebook_comment_id: facebookCommentId },
-      relations: ['socialPage', 'post', 'buyer']
+      relations: ['socialPage', 'post', 'buyer'],
     });
   }
 
@@ -184,30 +195,88 @@ export class SocialMessagesService {
    */
   async findSocialPageByUuid(uuid: string): Promise<SocialPage | null> {
     return await this.socialPageRepository.findOne({
-      where: { id: uuid }
+      where: { id: uuid },
     });
   }
 
   /**
    * Find all comments with pagination
    */
-  async findAllCommentsWithPagination(skip: number, limit: number): Promise<[SocialMessage[], number]> {
+  async findAllCommentsWithPagination(
+    skip: number,
+    limit: number,
+  ): Promise<[SocialMessage[], number]> {
     return await this.socialMessageRepository.findAndCount({
       skip,
       take: limit,
       relations: ['socialPage', 'post', 'buyer'],
-      order: { created_at: 'DESC' }
+      order: { created_at: 'DESC' },
     });
   }
 
   /**
    * Find comments by social page ID
    */
-  async findCommentsBySocialPageId(socialPageId: string): Promise<SocialMessage[]> {
+  async findCommentsBySocialPageId(
+    socialPageId: string,
+  ): Promise<SocialMessage[]> {
     return await this.socialMessageRepository.find({
       where: { socialPage: { id: socialPageId } },
       relations: ['socialPage', 'post', 'buyer'],
-      order: { created_at: 'DESC' }
+      order: { created_at: 'DESC' },
     });
   }
+
+  async markAsProcessed(id: string) {
+    await this.socialMessageRepository.update(id, { is_processed: true });
+  }
+
+  async findUnprocessed() {
+    const messages = await this.socialMessageRepository.find({
+      where: { is_processed: false },
+      relations: ['buyer'],
+      order: { created_at: 'ASC' }, // optional: keep chronological order
+    });
+
+    const messageIds = messages.map((message) => message.id);
+
+    // Group & transform
+    const grouped = Object.values(
+      messages.reduce(
+        (acc, msg) => {
+          const buyerId = String(msg.buyer?.id || '0');
+          const buyerName = msg.buyer?.name || 'Unknown Buyer';
+
+          if (!acc[buyerId]) {
+            acc[buyerId] = {
+              buyer_id: buyerId,
+              buyer: buyerName,
+              messages: [],
+            };
+          }
+
+          acc[buyerId].messages.push(msg.message_text);
+          return acc;
+        },
+        {} as Record<
+          string,
+          { buyer_id: string; buyer: string; messages: string[] }
+        >,
+      ),
+    );
+
+    return { messages: grouped, messageIds: messageIds };
+    // return messages;
+  }
+
+  // async markAsProcessedByFacebookId(facebookCommentId: string): Promise<void> {
+  //   await this.socialMessageRepository
+  //     .createQueryBuilder('sm')
+  //     .innerJoin('sm.buyer', 'buyer')
+  //     .update()
+  //     .set({ is_processed: true })
+  //     .where('buyer.facebook_user_id = :facebookUserId', { facebookCommentId })
+  //     .andWhere('sm.is_processed = false')
+  //     .execute();
+  // }
 }

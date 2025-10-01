@@ -65,4 +65,7 @@ export class SocialMessage {
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
   created_at: Date;
+
+  @Column({ default: false })
+  is_processed: boolean;
 }
