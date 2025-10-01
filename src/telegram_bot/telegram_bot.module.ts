@@ -4,11 +4,14 @@ import { TelegramBotController } from './telegram_bot.controller';
 import { TelegramBotUpdate } from './telegram_bot.update';
 import { OllamaAiService } from 'src/ollama_ai/ollama_ai.service';
 import { OllamaAiModule } from 'src/ollama_ai/ollama_ai.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { TelegramBotEntity } from './entities/telegram_bot.entity';
+import { TelegramChatEntity } from './entities/telegram_chat.entity';
 
 @Module({
   controllers: [TelegramBotController],
   providers: [TelegramBotService, TelegramBotUpdate, TelegramBotController],
   exports: [TelegramBotUpdate],
-  imports: [OllamaAiModule]
+  imports: [OllamaAiModule, TypeOrmModule.forFeature([TelegramBotEntity, TelegramChatEntity])]
 })
 export class TelegramBotModule { }

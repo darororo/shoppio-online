@@ -12,6 +12,8 @@ import { Post } from 'src/posts/entities/post.entity';
 import { SocialAccount } from 'src/social_account/entities/social_account.entity';
 import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
 import { SocialPage } from 'src/social_pages/entities/social_page.entity';
+import { TelegramBotEntity } from 'src/telegram_bot/entities/telegram_bot.entity';
+import { TelegramChatEntity } from 'src/telegram_bot/entities/telegram_chat.entity';
 import { User } from 'src/users/entities/user.entity';
 
 export function getDatabaseConfig(): TypeOrmModuleOptions {
@@ -59,6 +61,8 @@ export function getDatabaseConfig(): TypeOrmModuleOptions {
       PostDistribution,
       Buyer,
       Order,
+      TelegramChatEntity,
+      TelegramBotEntity
     ],
     // Set synchronize to true for development only. NEVER use true in production!
     synchronize: process.env.NODE_ENV !== 'production',
@@ -70,7 +74,7 @@ export function getDatabaseConfig(): TypeOrmModuleOptions {
     retryAttempts: 3,
     retryDelay: 3000,
     // Don't drop schema by default; preserves local DB when restarting dev containers
-    dropSchema: false,
+    dropSchema: true,
     schema,
   };
 }

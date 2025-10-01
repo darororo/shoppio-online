@@ -1,4 +1,7 @@
-import { Command, Ctx, Hears, Start, Update, Sender, InjectBot } from 'nestjs-telegraf';
+// @ts-nocheck
+
+
+import { Command, Ctx, Hears, Start, Update, Sender, InjectBot, On, Message } from 'nestjs-telegraf';
 import { WIZARD_SCENE_ID } from './telegram_bot.constants';
 import { Context } from './interface/context.interface';
 import { UpdateType } from './decorator/update_type.decorator';
@@ -8,10 +11,19 @@ import { TelegramBotService } from './telegram_bot.service';
 import { OllamaAiService } from 'src/ollama_ai/ollama_ai.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { OLLAMA_SERVICE } from 'src/ollama_ai/ollama_ai.constants';
+import { InjectRepository } from '@nestjs/typeorm';
+import { TelegramChatEntity } from './entities/telegram_chat.entity';
+import { Repository } from 'typeorm';
+import { ChatFromGetChat } from 'node_modules/telegraf/typings/core/types/typegram';
+
 
 @Update()
 export class TelegramBotUpdate {
-    constructor(@Inject(OLLAMA_SERVICE) private readonly ollama: OllamaAiService) { }
+    constructor(@Inject(OLLAMA_SERVICE) private readonly ollama: OllamaAiService,
+        @InjectRepository(TelegramChatEntity)
+        private readonly chatRepo: Repository<TelegramChatEntity>
+
+    ) { }
     @Start()
     async startCommand(@Ctx() ctx: Context,
         @UpdateType() updateType: TelegrafUpdateType,
@@ -19,6 +31,12 @@ export class TelegramBotUpdate {
         @Sender('last_name') lastName: string,) {
 
         // this.bot.start((ctx) => ctx.reply('Welcome'))
+        console.log(ctx)
+        const chat = await ctx.getChat()
+        console.log("chat")
+        console.log(chat)
+        console.log("CHAT ID")
+        console.log(chat.id)
 
         return `Yatta desu ne OwO`;
     }
@@ -62,5 +80,29 @@ export class TelegramBotUpdate {
         // this.bot.start((ctx) => ctx.reply('Welcome'))
 
         return `ជម្រាបលា ${firstName} ${lastName} ${updateType}`;
+    }
+
+
+
+    @On("new_chat_members")
+    async onAddedToChat(@Ctx() ctx: Context) {
+        const chat = await ctx.getChat();
+        const type = chat.type;
+        const id = chat.id;
+
+
+        const chatId = chat.id;
+        const botId = (await ctx.telegram.getMe()).id;
+
+        const bruh = await this.chatRepo.save({
+            chatId: chatId,
+            title: chat.title,
+            type: type
+        });
+
+        console.log("I AM ADDED TO A NEW CHAT")
+        console.log(ctx)
+        console.log((await ctx.getChat()).id)
+        return "BONJOUR"
     }
 }
