@@ -1,0 +1,32 @@
+stages:
+  - notify
+
+notify_telegram:
+  stage: notify
+  only:
+    - dev
+    - dev-latest
+    - development
+    - superbackend
+
+  script:
+    - |
+      TELEGRAM_BOT_TOKEN=7558686350:AAEtVlVEobN85MgS7deoLhTeVUhXN61gXRU
+      TELEGRAM_CHAT_ID=-1003091087741
+
+      # COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
+      # COMMIT_AUTHOR="$GITLAB_USER_NAME"
+      REPO_NAME="$CI_PROJECT_TITLE"
+      REPO_URL="$CI_PROJECT_URL"
+      COMMIT_MESSAGE="$CI_COMMIT_MESSAGE"
+      COMMIT_AUTHOR="$GITLAB_USER_NAME"
+      COMMIT_BRANCH="$CI_COMMIT_BRANCH"
+
+      MESSAGE="🚀 Push to *$REPO_NAME* on branch \`$COMMIT_BRANCH\`
+      👤 Author: $COMMIT_AUTHOR
+      💬 Message: $COMMIT_MESSAGE
+      🔗 Repo: $REPO_URL"
+
+      curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+        -d "chat_id=${TELEGRAM_CHAT_ID}" \
+        -d "text=${MESSAGE}"
