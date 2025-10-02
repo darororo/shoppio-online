@@ -7,12 +7,15 @@ import { Context, Telegraf } from 'telegraf';
 import { error, log } from 'console';
 import { BOT_AI, SHOPPIO_BOT_NAME } from './telegram_bot.constants';
 import { Ctx, InjectBot } from 'nestjs-telegraf';
+import { TelegramChatEntity } from './entities/telegram_chat.entity';
 
 @Injectable()
 export class TelegramBotService {
   constructor(
     @InjectRepository(TelegramBotEntity)
     private readonly botRepo: Repository<TelegramBotEntity>,
+    @InjectRepository(TelegramChatEntity)
+    private readonly chatRepo: Repository<TelegramChatEntity>,
     @InjectRepository(TelegramBotSettingEntity)
     private readonly settingRepo: Repository<TelegramBotSettingEntity>,
     @InjectBot(SHOPPIO_BOT_NAME) private readonly bot: Telegraf<Context>,
@@ -20,6 +23,41 @@ export class TelegramBotService {
 
   create() {
     return 'This action adds a new telegramBot';
+  }
+
+  async getMe(): Promise<any> {
+    try {
+      const bot = await this.bot.telegram.getMe();
+      return bot;
+    } catch (e) {
+      return {
+        ok: false,
+        error: (e as Error).message
+      }
+    }
+  }
+
+  async getChat(chatId: number): Promise<any> {
+    try {
+      const chat = (await this.bot.telegram.getChat(chatId));
+      return chat;
+    } catch (e) {
+      return {
+        ok: false,
+        error: (e as Error).message
+      }
+    }
+  }
+
+  async getAllChats(): Promise<any> {
+    try {
+      return this.chatRepo.find();
+    } catch (e) {
+      return {
+        ok: false,
+        error: (e as Error).message
+      }
+    }
   }
 
   async enableAi(botId: number) {

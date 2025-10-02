@@ -13,34 +13,28 @@ import { Repository } from 'typeorm';
 @Controller('telegram-bot')
 export class TelegramBotController {
   constructor(
-    @InjectRepository(TelegramChatEntity) private readonly chatRepo: Repository<TelegramChatEntity>,
-    @InjectBot(SHOPPIO_BOT_NAME) private readonly bot: Telegraf<Context>,
     private readonly botService: TelegramBotService,
   ) {
 
   }
 
-
   @Get("/me")
   async me() {
-    const botName = (await this.bot.telegram.getMe()).username;
-    return botName;
+    return this.botService.getMe();
   }
 
   @Get("/chat")
   async getChat(@Query("chatId") chatId: String): Promise<any> {
-    const id = Number(chatId)
-    const chat = (await this.bot.telegram.getChat(id));
-    return chat;
+    return this.botService.getChat(Number(chatId));
   }
 
   @Get("/chats")
   async getAllChats(): Promise<any> {
-    return this.chatRepo.find()
+    return this.botService.getAllChats()
   }
 
   @Post("/send-photo")
-  async getChats(@Body("chatId") chatId: number, @Body("photoUrl") photoUrl: string) {
+  async sendPhoto(@Body("chatId") chatId: number, @Body("photoUrl") photoUrl: string) {
     return this.botService.sendPhoto(chatId, photoUrl)
   }
 }
