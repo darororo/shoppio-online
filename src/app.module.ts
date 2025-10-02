@@ -60,7 +60,7 @@ import { OllamaAiModule } from './ollama_ai/ollama_ai.module';
     }),
     OllamaAiModule.register({
       host: process.env.OLLAMA_HOST || '',
-      model: 'granite3.1-moe:1b',
+      model: process.env.OLLAMA_MODEL || '',
       apiKey: process.env.OLLAMA_API_KEY || '',
     }),
     TelegramBotModule,
