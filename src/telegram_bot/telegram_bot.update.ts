@@ -23,7 +23,9 @@ const wordsRegex = /\w+/g
 
 @Update()
 export class TelegramBotUpdate {
-    constructor(@Inject(OLLAMA_SERVICE) private readonly ollama: OllamaAiService,
+    constructor(
+        @Inject(OLLAMA_SERVICE)
+        private readonly ollama: OllamaAiService,
         @InjectRepository(TelegramChatEntity)
         private readonly chatRepo: Repository<TelegramChatEntity>,
         private readonly botService: TelegramBotService,
@@ -87,6 +89,10 @@ export class TelegramBotUpdate {
         @Sender('first_name') firstName: string,
         @Sender('last_name') lastName: string,
     ) {
+        const chat = await ctx.getChat();
+        console.log(chat)
+        ctx.sendPhoto("https://preview.redd.it/mi67w3j5yoq61.jpg?auto=webp&s=8384f4ca30c858941d84529842fac727a237c92b")
+
         const bot = await ctx.telegram.getMe();
         const botId = bot.id;
         const aiEnabled = await this.botService.isSettingEnabled(botId, BOT_AI);
@@ -95,6 +101,8 @@ export class TelegramBotUpdate {
         const text = ctx.text
         const result = await this.ollama.sendPrompt(text || 'hello');
         console.log(result)
+
+        ctx.telegram.sendPhoto()
 
         return `Hey ${firstName} ${lastName} ${result}`;
     }

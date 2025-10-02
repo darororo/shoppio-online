@@ -3,9 +3,10 @@ import { Repository } from 'typeorm';
 import { TelegramBotEntity } from './entities/telegram_bot.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TelegramBotSettingEntity } from './entities/telegram_bot_setting_entity';
-import { Context } from 'telegraf';
+import { Context, Telegraf } from 'telegraf';
 import { error, log } from 'console';
-import { BOT_AI } from './telegram_bot.constants';
+import { BOT_AI, SHOPPIO_BOT_NAME } from './telegram_bot.constants';
+import { Ctx, InjectBot } from 'nestjs-telegraf';
 
 @Injectable()
 export class TelegramBotService {
@@ -14,6 +15,7 @@ export class TelegramBotService {
     private readonly botRepo: Repository<TelegramBotEntity>,
     @InjectRepository(TelegramBotSettingEntity)
     private readonly settingRepo: Repository<TelegramBotSettingEntity>,
+    @InjectBot(SHOPPIO_BOT_NAME) private readonly bot: Telegraf<Context>,
   ) { }
 
   create() {
@@ -55,6 +57,22 @@ export class TelegramBotService {
       return result?.state ?? false;
     } catch (e) {
       return false;
+    }
+  }
+
+  async sendPhoto(chatId: number, photoUrl: string): Promise<any> {
+    try {
+      const result = await this.bot.telegram.sendPhoto(chatId, photoUrl);
+      return {
+        ok: true,
+        result,
+      };
+    } catch (e) {
+      await this.bot.telegram.sendMessage(chatId, "nuh uh")
+      return {
+        ok: false,
+        error: (e as Error).message,
+      };
     }
   }
 }

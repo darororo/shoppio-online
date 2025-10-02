@@ -15,7 +15,7 @@ export class TelegramBotController {
   constructor(
     @InjectRepository(TelegramChatEntity) private readonly chatRepo: Repository<TelegramChatEntity>,
     @InjectBot(SHOPPIO_BOT_NAME) private readonly bot: Telegraf<Context>,
-    private readonly telegramBotService: TelegramBotService,
+    private readonly botService: TelegramBotService,
   ) {
 
   }
@@ -39,9 +39,13 @@ export class TelegramBotController {
     return this.chatRepo.find()
   }
 
-  // @Get("/chats")
-  // async getChats() {
-  //   const botName = await this.bot.telegram.getChat();
-  //   return botName;
-  // }
+  @Post("/send-photo")
+  async getChats(@Body("chatId") chatId: number, @Body("photoUrl") photoUrl: string) {
+    try {
+
+      const result = await this.botService.sendPhoto(chatId, photoUrl)
+    } catch (e) {
+
+    }
+  }
 }
