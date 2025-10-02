@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 
-import { Command, Ctx, Hears, Start, Update, Sender, InjectBot, On, Message } from 'nestjs-telegraf';
+import { Command, Ctx, Hears, Start, Update, Sender, InjectBot, On, Message, Next } from 'nestjs-telegraf';
 import { BOT_AI, WIZARD_SCENE_ID } from './telegram_bot.constants';
 import { Context } from './interface/context.interface';
 import { UpdateType } from './decorator/update_type.decorator';
@@ -64,16 +64,17 @@ export class TelegramBotUpdate {
 
 
 
-    @Command("enableAi")
-    async onEnableAI(@Ctx() ctx: Context) {
+    @Command("enableai")
+    async onEnableAi(@Ctx() ctx: Context) {
+        console.log('ENABLE AI')
         const bot = await ctx.telegram.getMe();
         const botId = bot.id;
         await this.botService.enableAi(botId);
         return "I LOVE JESUS";
     };
 
-    @Command("disableAi")
-    async onEnableAI(@Ctx() ctx: Context) {
+    @Command("disableai")
+    async onDisableAi(@Ctx() ctx: Context) {
         const bot = await ctx.telegram.getMe();
         const botId = bot.id;
         await this.botService.disableAi(botId);
@@ -85,14 +86,12 @@ export class TelegramBotUpdate {
     @Hears([wordsRegex])
     async onGreetings(
         @Ctx() ctx: Context,
+        @Next() next: Function,
         @UpdateType() updateType: TelegrafUpdateType,
         @Sender('first_name') firstName: string,
         @Sender('last_name') lastName: string,
     ) {
-        const chat = await ctx.getChat();
-        console.log(chat)
-        ctx.sendPhoto("https://preview.redd.it/mi67w3j5yoq61.jpg?auto=webp&s=8384f4ca30c858941d84529842fac727a237c92b")
-
+        if (ctx.message.text.startsWith("/")) return next();
         const bot = await ctx.telegram.getMe();
         const botId = bot.id;
         const aiEnabled = await this.botService.isSettingEnabled(botId, BOT_AI);
@@ -101,9 +100,6 @@ export class TelegramBotUpdate {
         const text = ctx.text
         const result = await this.ollama.sendPrompt(text || 'hello');
         console.log(result)
-
-        ctx.telegram.sendPhoto()
-
         return `Hey ${firstName} ${lastName} ${result}`;
     }
 

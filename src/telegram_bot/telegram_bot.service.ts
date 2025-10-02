@@ -62,9 +62,14 @@ export class TelegramBotService {
 
   async enableAi(botId: number) {
     try {
-      const newSetting = { setting: BOT_AI, state: true, botId: botId }
-      const result = await this.settingRepo.save(newSetting);
-      return result
+      let setting = await this.getSetting(botId, BOT_AI)
+      if (!setting) {
+        setting = { setting: BOT_AI, botId: botId }
+      }
+      setting = { ...setting, state: true }
+      const result = await this.settingRepo.save(setting);
+      return result;
+
     } catch (e) {
       console.error(e)
     }
@@ -72,9 +77,14 @@ export class TelegramBotService {
 
   async disableAi(botId: number) {
     try {
-      const newSetting = { setting: BOT_AI, state: false, botId: botId }
-      const result = await this.settingRepo.save(newSetting);
-      return result
+      let setting = await this.getSetting(botId, BOT_AI)
+      if (!setting) {
+        setting = { setting: BOT_AI, botId: botId }
+      }
+      setting = { ...setting, state: false }
+      const result = await this.settingRepo.save(setting);
+      return result;
+
     } catch (e) {
       console.error(e)
     }
@@ -83,6 +93,15 @@ export class TelegramBotService {
   async getSettings(botId: number) {
     try {
       const result = await this.settingRepo.find({ where: { botId: botId } });
+      return result
+    } catch (e) {
+      return {};
+    }
+  }
+
+  async getSetting(botId: number, setting: string) {
+    try {
+      const result = await this.settingRepo.findOne({ where: { botId: botId, setting: setting } });
       return result
     } catch (e) {
       return {};
