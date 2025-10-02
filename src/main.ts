@@ -3,10 +3,11 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AllExceptionsFilter } from './common/filter/all-exceptions.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-    const configService = app.get(ConfigService);
-    app.enableCors({
+  const configService = app.get(ConfigService);
+  app.enableCors({
     origin: [
       configService.get('FRONTEND_URL'),
       'https://localhost:3000',
@@ -26,16 +27,18 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'fb-token'],
     credentials: true,
   });
-  
+
   app.useGlobalPipes(new ValidationPipe(
-  {
-     whitelist: true,            // strip unknown fields
+    {
+      whitelist: true,            // strip unknown fields
       forbidNonWhitelisted: true, // throw error if extra fields are sent
       transform: true,            // auto-transform types (e.g. string -> number)
       // Enable validation for nested objects
       disableErrorMessages: false, // disable error messages
-}
+    }
   ));
+
+  app.useGlobalFilters(new AllExceptionsFilter());
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
