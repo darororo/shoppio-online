@@ -2,7 +2,7 @@
 
 
 import { Command, Ctx, Hears, Start, Update, Sender, InjectBot, On, Message } from 'nestjs-telegraf';
-import { WIZARD_SCENE_ID } from './telegram_bot.constants';
+import { BOT_AI, WIZARD_SCENE_ID } from './telegram_bot.constants';
 import { Context } from './interface/context.interface';
 import { UpdateType } from './decorator/update_type.decorator';
 import { UpdateType as TelegrafUpdateType } from 'node_modules/telegraf/typings/telegram-types';
@@ -15,14 +15,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { TelegramChatEntity } from './entities/telegram_chat.entity';
 import { Repository } from 'typeorm';
 import { ChatFromGetChat } from 'node_modules/telegraf/typings/core/types/typegram';
+import { TelegramBotEntity } from './entities/telegram_bot.entity';
 
+
+const notCommandRegex = /\b(?!\/)\w+\b/g;
+const wordsRegex = /\w+/g
 
 @Update()
 export class TelegramBotUpdate {
     constructor(@Inject(OLLAMA_SERVICE) private readonly ollama: OllamaAiService,
         @InjectRepository(TelegramChatEntity)
-        private readonly chatRepo: Repository<TelegramChatEntity>
-
+        private readonly chatRepo: Repository<TelegramChatEntity>,
+        private readonly botService: TelegramBotService,
     ) { }
     @Start()
     async startCommand(@Ctx() ctx: Context,
@@ -42,7 +46,7 @@ export class TelegramBotUpdate {
     }
 
 
-    @Hears(['hi', 'hello', 'hey', 'qq', /\w+/g])
+    @Hears(['hi', 'hello', 'hey', 'qq'])
     async onGreetings(
         @Ctx() ctx: Context,
         @UpdateType() updateType: TelegrafUpdateType,
@@ -52,6 +56,41 @@ export class TelegramBotUpdate {
         // if (updateType != 'message') return;
 
         console.log('onGreetings')
+
+        return `Hey ${firstName} ${lastName}`;
+    }
+
+
+
+    @Command("enableAi")
+    async onEnableAI(@Ctx() ctx: Context) {
+        const bot = await ctx.telegram.getMe();
+        const botId = bot.id;
+        await this.botService.enableAi(botId);
+        return "I LOVE JESUS";
+    };
+
+    @Command("disableAi")
+    async onEnableAI(@Ctx() ctx: Context) {
+        const bot = await ctx.telegram.getMe();
+        const botId = bot.id;
+        await this.botService.disableAi(botId);
+
+        return "CHRIST IS DEAD"
+    };
+
+
+    @Hears([wordsRegex])
+    async onGreetings(
+        @Ctx() ctx: Context,
+        @UpdateType() updateType: TelegrafUpdateType,
+        @Sender('first_name') firstName: string,
+        @Sender('last_name') lastName: string,
+    ) {
+        const bot = await ctx.telegram.getMe();
+        const botId = bot.id;
+        const aiEnabled = await this.botService.isSettingEnabled(botId, BOT_AI);
+        if (!aiEnabled) return "AI IS DEAD"
 
         const text = ctx.text
         const result = await this.ollama.sendPrompt(text || 'hello');
