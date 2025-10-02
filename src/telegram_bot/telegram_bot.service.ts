@@ -134,4 +134,42 @@ export class TelegramBotService {
       };
     }
   }
+
+  // // ** Video Url is not supported
+  // async sendVideoUrl(chatId: number, videoUrl: string): Promise<any> {
+  //   try {
+  //     const result = await this.bot.telegram.sendVideo(chatId, videoUrl);
+  //     return {
+  //       ok: true,
+  //       from: result.from,
+  //       chat: result.chat,
+  //     };
+  //   } catch (e) {
+  //     await this.bot.telegram.sendMessage(chatId, "nuh uh")
+  //     return {
+  //       ok: false,
+  //       error: (e as Error).message,
+  //     };
+  //   }
+  // }
+
+  async sendVideoFile(chatId: number, photo: Express.Multer.File): Promise<any> {
+    try {
+      const file = {
+        source: photo.buffer,
+      }
+      const result = await this.bot.telegram.sendVideo(chatId, file);
+      return {
+        ok: true,
+        from: result.from,
+        chat: result.chat,
+      };
+    } catch (e) {
+      await this.bot.telegram.sendMessage(chatId, "nuh uh")
+      return {
+        ok: false,
+        error: (e as Error).message,
+      };
+    }
+  }
 }

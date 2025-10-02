@@ -37,8 +37,14 @@ export class TelegramBotController {
   @Post("/send-photo")
   @UseInterceptors(FileInterceptor('photo'))
   async sendPhoto(@Body("chatId") chatId: number, @Body("photoUrl") photoUrl: string, @UploadedFile() photo: Express.Multer.File) {
-    if (photoUrl) return this.botService.sendPhotoUrl(chatId, photoUrl)
+    if (photoUrl) return this.botService.sendPhotoUrl(chatId, photoUrl);
 
     return this.botService.sendPhotoFile(chatId, photo);
+  }
+
+  @Post("/send-video")
+  @UseInterceptors(FileInterceptor('video'))
+  async sendVideo(@Body("chatId") chatId: number, @UploadedFile() video: Express.Multer.File) {
+    return this.botService.sendVideoFile(chatId, video);
   }
 }
