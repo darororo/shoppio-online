@@ -65,7 +65,8 @@ export class TelegramBotService {
       const result = await this.bot.telegram.sendPhoto(chatId, photoUrl);
       return {
         ok: true,
-        result,
+        from: result.from,
+        chat: result.chat,
       };
     } catch (e) {
       await this.bot.telegram.sendMessage(chatId, "nuh uh")

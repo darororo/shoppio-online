@@ -41,11 +41,6 @@ export class TelegramBotController {
 
   @Post("/send-photo")
   async getChats(@Body("chatId") chatId: number, @Body("photoUrl") photoUrl: string) {
-    try {
-
-      const result = await this.botService.sendPhoto(chatId, photoUrl)
-    } catch (e) {
-
-    }
+    return this.botService.sendPhoto(chatId, photoUrl)
   }
 }
