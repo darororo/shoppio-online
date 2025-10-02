@@ -180,9 +180,16 @@ export class AuthService {
       });
 
       // Verify that this token belongs to a user in our database
-      const dbUser = await this.usersService.findByFacebookId(userData.id);
+      // Add retry logic for potential race conditions during user creation
+      let dbUser = await this.usersService.findByFacebookId(userData.id);
       if (!dbUser) {
-        throw new Error('User not found in our database');
+        console.log('User not found in database, waiting and retrying once...');
+        // Wait a short time for potential database transaction to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+        dbUser = await this.usersService.findByFacebookId(userData.id);
+        if (!dbUser) {
+          throw new Error('User not found in our database');
+        }
       }
 
       // Return simplified data with only name and email
