@@ -1,6 +1,6 @@
 
 
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { TelegramBotService } from './telegram_bot.service';
 import { Ctx, InjectBot, Start, Update } from 'nestjs-telegraf';
 import { Context, Telegraf } from 'telegraf';
@@ -8,6 +8,7 @@ import { SHOPPIO_BOT_NAME } from './telegram_bot.constants';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TelegramChatEntity } from './entities/telegram_chat.entity';
 import { Repository } from 'typeorm';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 
 @Controller('telegram-bot')
@@ -34,7 +35,10 @@ export class TelegramBotController {
   }
 
   @Post("/send-photo")
-  async sendPhoto(@Body("chatId") chatId: number, @Body("photoUrl") photoUrl: string) {
-    return this.botService.sendPhoto(chatId, photoUrl)
+  @UseInterceptors(FileInterceptor('photo'))
+  async sendPhoto(@Body("chatId") chatId: number, @Body("photoUrl") photoUrl: string, @UploadedFile() photo: Express.Multer.File) {
+    if (photoUrl) return this.botService.sendPhotoUrl(chatId, photoUrl)
+
+    return this.botService.sendPhotoFile(chatId, photo);
   }
 }

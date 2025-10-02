@@ -98,9 +98,29 @@ export class TelegramBotService {
     }
   }
 
-  async sendPhoto(chatId: number, photoUrl: string): Promise<any> {
+  async sendPhotoUrl(chatId: number, photoUrl: string): Promise<any> {
     try {
       const result = await this.bot.telegram.sendPhoto(chatId, photoUrl);
+      return {
+        ok: true,
+        from: result.from,
+        chat: result.chat,
+      };
+    } catch (e) {
+      await this.bot.telegram.sendMessage(chatId, "nuh uh")
+      return {
+        ok: false,
+        error: (e as Error).message,
+      };
+    }
+  }
+
+  async sendPhotoFile(chatId: number, photo: Express.Multer.File): Promise<any> {
+    try {
+      const file = {
+        source: photo.buffer,
+      }
+      const result = await this.bot.telegram.sendPhoto(chatId, file);
       return {
         ok: true,
         from: result.from,
