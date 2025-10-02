@@ -20,10 +20,11 @@ export class OllamaAiService {
   }
 
   async sendPrompt(prompt: string) {
+    const system = { role: 'system', content: "You are a helpful shop assistant. Please keep your response short and helpful." }
     const message = { role: 'user', content: prompt }
     const response = await this.ollama.chat({
       model: this.options.model,
-      messages: [message],
+      messages: [system, message],
     })
 
     const content = response.message.content
