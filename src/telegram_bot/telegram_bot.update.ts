@@ -70,7 +70,7 @@ export class TelegramBotUpdate {
         const bot = await ctx.telegram.getMe();
         const botId = bot.id;
         await this.botService.enableAi(botId);
-        return "I LOVE JESUS";
+        return "AI Mode ON";
     };
 
     @Command("disableai")
@@ -79,12 +79,12 @@ export class TelegramBotUpdate {
         const botId = bot.id;
         await this.botService.disableAi(botId);
 
-        return "CHRIST IS DEAD"
+        return "AI Mode OFF"
     };
 
 
     @Hears([wordsRegex])
-    async onGreetings(
+    async onMessage(
         @Ctx() ctx: Context,
         @Next() next: Function,
         @UpdateType() updateType: TelegrafUpdateType,

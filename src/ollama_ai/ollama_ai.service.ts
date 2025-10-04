@@ -25,6 +25,8 @@ export class OllamaAiService {
     const response = await this.ollama.chat({
       model: this.options.model,
       messages: [system, message],
+      think: false,
+      stream: false,
     })
 
     const content = response.message.content
