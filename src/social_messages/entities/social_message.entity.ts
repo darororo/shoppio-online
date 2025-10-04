@@ -40,6 +40,9 @@ export class SocialMessage {
   sender_id: string;
 
   @Column({ type: 'varchar', nullable: true })
+  sender_name: string;
+
+  @Column({ type: 'varchar', nullable: true })
   facebook_comment_id: string; // Facebook's unique comment ID
 
   @Column({ type: 'varchar', nullable: true })

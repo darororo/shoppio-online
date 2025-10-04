@@ -13,6 +13,9 @@ export class CreateSocialMessageFromCommentDto {
   @IsString()
   sender_id: string;
 
+  @IsString()
+  sender_name: string;
+
   @IsOptional()
   @IsString()
   parent_comment_id?: string;

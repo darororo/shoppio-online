@@ -69,6 +69,7 @@ export class SocialMessagesService {
       socialPage,
       post: post || undefined,
       sender_id: dto.sender_id,
+      sender_name: dto.sender_name,
       facebook_comment_id: dto.facebook_comment_id,
       facebook_post_id: dto.facebook_post_id,
       parent_comment_id: dto.parent_comment_id,
@@ -108,6 +109,7 @@ export class SocialMessagesService {
           facebook_post_id: facebookPostId,
           message_text: comment.message || '',
           sender_id: comment.from?.id || '',
+          sender_name: comment.from?.name || '',
           parent_comment_id: comment.parent?.id,
           social_page_id: socialPageId,
           post_id: postId,
@@ -238,45 +240,82 @@ export class SocialMessagesService {
       order: { created_at: 'ASC' }, // optional: keep chronological order
     });
 
-    const messageIds = messages.map((message) => message.id);
+    // const messageIds = messages.map((message) => message.id);
+
+    const messageData = messages.map((message) => ({
+      id: message.id,
+      post_id: message.post?.id || null,
+      buyer_id: message.buyer?.id || null,
+      buyer: message.buyer?.name || 'Unknown Buyer',
+      message_text: message.message_text,
+    }));
 
     // Group & transform
+    //   const grouped = Object.values(
+    //     messages.reduce(
+    //       (acc, msg) => {
+    //         const buyerId = String(msg.buyer?.id || '0');
+    //         const buyerName = msg.buyer?.name || 'Unknown Buyer';
+
+    //         if (!acc[buyerId]) {
+    //           acc[buyerId] = {
+    //             buyer_id: buyerId,
+    //             buyer: buyerName,
+    //             messages: [],
+    //           };
+    //         }
+
+    //         acc[buyerId].messages.push(msg.message_text);
+    //         return acc;
+    //       },
+    //       {} as Record<
+    //         string,
+    //         { buyer_id: string; buyer: string; messages: string[] }
+    //       >,
+    //     ),
+    //   );
+
+    //   return { messages: grouped, messageIds: messageIds };
+    //   // return messages;
+    // }
+
     const grouped = Object.values(
       messages.reduce(
         (acc, msg) => {
-          const buyerId = String(msg.buyer?.id || '0');
-          const buyerName = msg.buyer?.name || 'Unknown Buyer';
+          const postId = String(msg.facebook_post_id || 'unknown_post');
 
-          if (!acc[buyerId]) {
-            acc[buyerId] = {
-              buyer_id: buyerId,
-              buyer: buyerName,
+          if (!acc[postId]) {
+            acc[postId] = {
+              post_id: postId,
               messages: [],
             };
           }
 
-          acc[buyerId].messages.push(msg.message_text);
+          acc[postId].messages.push({
+            id: msg.id,
+            buyer_id: String(msg.buyer?.id || '0'),
+            buyer: msg.buyer?.name || 'Unknown Buyer',
+            message_text: msg.message_text,
+          });
+
           return acc;
         },
         {} as Record<
           string,
-          { buyer_id: string; buyer: string; messages: string[] }
+          {
+            post_id: string;
+            messages: {
+              id: string;
+              buyer_id: string;
+              buyer: string;
+              message_text: string;
+            }[];
+          }
         >,
       ),
     );
 
-    return { messages: grouped, messageIds: messageIds };
-    // return messages;
+    // return { messages: grouped, messageIds: messageData };
+    return grouped;
   }
-
-  // async markAsProcessedByFacebookId(facebookCommentId: string): Promise<void> {
-  //   await this.socialMessageRepository
-  //     .createQueryBuilder('sm')
-  //     .innerJoin('sm.buyer', 'buyer')
-  //     .update()
-  //     .set({ is_processed: true })
-  //     .where('buyer.facebook_user_id = :facebookUserId', { facebookCommentId })
-  //     .andWhere('sm.is_processed = false')
-  //     .execute();
-  // }
 }

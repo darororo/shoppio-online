@@ -27,7 +27,7 @@ export class AnalyzedMessage {
   message: SocialMessage;
 
   @Column({ type: 'varchar', enum: IntentionEnum, nullable: true })
-  intent: IntentionEnum; // e.g., buy, info, complaint, support, others
+  intention: IntentionEnum; // e.g., buy, info, complaint, support, others
 
   // @Column({ type: 'varchar', length: 20, nullable: true })
   // sentiment: string; // positive, negative, neutral
@@ -38,10 +38,10 @@ export class AnalyzedMessage {
   // @Column({ type: 'text', array: true, nullable: true })
   // keywords: string[];
 
-  @Column()
+  @Column({ nullable: true })
   buyerId: string;
 
-  @Column()
+  @Column({ nullable: true })
   buyerName: string;
 
   @Column()

@@ -5,9 +5,15 @@ import { AnalyzedMessagesModule } from 'src/analyzed_messages/analyzed_messages.
 import { ConfigModule } from '@nestjs/config';
 import { AnalyzerService } from './analyzer.service';
 import { GeminiService } from './gemini.service';
+import { OrdersModule } from 'src/orders/orders.module';
 
 @Module({
-  imports: [SocialMessagesModule, AnalyzedMessagesModule, ConfigModule],
+  imports: [
+    SocialMessagesModule,
+    AnalyzedMessagesModule,
+    OrdersModule,
+    ConfigModule,
+  ],
   controllers: [AnalyzerController],
   providers: [AnalyzerService, GeminiService],
   exports: [AnalyzerService],

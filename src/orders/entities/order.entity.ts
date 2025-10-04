@@ -17,10 +17,16 @@ export class Order {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ nullable: true })
+  buyId: string;
+
+  @Column({ nullable: true })
+  buyerName: string;
+
+  @Column({ nullable: true })
   product_name: string;
 
-  @Column()
+  @Column({ nullable: true })
   quantity: number;
 
   @Column({ type: 'enum', enum: StatusEnum, default: StatusEnum.PENDING })

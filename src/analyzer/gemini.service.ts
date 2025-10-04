@@ -40,7 +40,7 @@ export class GeminiService {
       const result = await this.genAI.models.generateContent({
         model:
           this.configService.get<string>('GEMINI_MODEL') || 'gemini-1.5-flash',
-        contents: prompt
+        contents: prompt,
       });
       const text = result.text;
 
@@ -76,12 +76,13 @@ Analyze the following customer message and provide a structured response.
 - Do **not** treat quantity units (like "ដប"/"bottle", "កំប៉ុង"/"can", "kg", "pack") as products.
 - Do **not** include grammatical particles (e.g., "នេះ", "នោះ", "នឹង") as part of product names.
 - If only a unit and number are given without a product name, set product = "Not mentioned".
+- "confidence_score" is based on how accurate the analysis you provided is.
 
 Message: "${message}"
 
 Respond ONLY in this strict JSON format:
 {
-  "intent": BUYING|INFO|IRRELEVANT,
+  "intent": buy|info|others,
   "product": What the customer wants to buy (with translation in parentheses if applicable),
   "quantity": Amount of product requested, must be a number,
   "location": Customer's location (with translation in parentheses if applicable),
@@ -104,7 +105,8 @@ Respond ONLY in this strict JSON format:
 
       const parsed = JSON.parse(jsonMatch[0]);
 
-      const intent = this.normalizeIntent(parsed.intent);
+      // const intent = this.normalizeIntent(parsed.intent);
+      const intent = parsed.intent;
       const confidence_score = this.normalizeConfidence(
         parsed.confidence_score,
       );

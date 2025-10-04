@@ -26,7 +26,7 @@ export class SocialMessagesController {
         return {
           success: false,
           message: 'Authorization header with Bearer token is required',
-          error: 'Missing or invalid authorization header'
+          error: 'Missing or invalid authorization header',
         };
       }
 
@@ -37,23 +37,24 @@ export class SocialMessagesController {
         socialPageId,
         internalPostId,
         hasAccessToken: !!accessToken,
-        accessTokenLength: accessToken?.length
+        accessTokenLength: accessToken?.length,
       });
 
       // Fetch comments from Facebook
       const comments = await this.facebookService.fetchAllPostComments(
         postId,
         accessToken,
-        true
+        true,
       );
 
       // Save comments to database
-      const savedMessages = await this.socialMessagesService.saveFacebookComments(
-        comments,
-        socialPageId,
-        postId,
-        internalPostId
-      );
+      const savedMessages =
+        await this.socialMessagesService.saveFacebookComments(
+          comments,
+          socialPageId,
+          postId,
+          internalPostId,
+        );
 
       return {
         success: true,
@@ -62,13 +63,13 @@ export class SocialMessagesController {
           totalComments: comments.length,
           savedComments: savedMessages.length,
           postId: postId,
-        }
+        },
       };
     } catch (error) {
       return {
         success: false,
         message: `Failed to fetch comments: ${error.message}`,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -90,7 +91,7 @@ export class SocialMessagesController {
         return {
           success: false,
           message: 'Authorization header with Bearer token is required',
-          error: 'Missing or invalid authorization header'
+          error: 'Missing or invalid authorization header',
         };
       }
 
@@ -99,12 +100,13 @@ export class SocialMessagesController {
       const parsedCommentLimit = parseInt(commentLimit) || 100;
 
       // Get the Facebook page ID from our database using the UUID
-      const socialPage = await this.socialMessagesService.findSocialPageByUuid(socialPageUuid);
+      const socialPage =
+        await this.socialMessagesService.findSocialPageByUuid(socialPageUuid);
       if (!socialPage) {
         return {
           success: false,
           message: 'Social page not found with the provided UUID',
-          error: 'Invalid social page UUID'
+          error: 'Invalid social page UUID',
         };
       }
 
@@ -112,16 +114,17 @@ export class SocialMessagesController {
         socialPageUuid,
         facebookPageId: socialPage.page_id,
         postLimit: parsedPostLimit,
-        commentLimit: parsedCommentLimit
+        commentLimit: parsedCommentLimit,
       });
 
       // Fetch posts with comments from Facebook using the actual Facebook page ID
-      const postsWithComments = await this.facebookService.fetchPagePostsWithComments(
-        socialPage.page_id,
-        accessToken,
-        parsedPostLimit,
-        parsedCommentLimit
-      );
+      const postsWithComments =
+        await this.facebookService.fetchPagePostsWithComments(
+          socialPage.page_id,
+          accessToken,
+          parsedPostLimit,
+          parsedCommentLimit,
+        );
 
       let totalComments = 0;
       let totalSaved = 0;
@@ -132,11 +135,12 @@ export class SocialMessagesController {
         totalComments += comments.length;
 
         if (comments.length > 0) {
-          const savedMessages = await this.socialMessagesService.saveFacebookComments(
-            comments,
-            socialPageUuid,
-            postData.postId
-          );
+          const savedMessages =
+            await this.socialMessagesService.saveFacebookComments(
+              comments,
+              socialPageUuid,
+              postData.postId,
+            );
           totalSaved += savedMessages.length;
         }
       }
@@ -149,33 +153,36 @@ export class SocialMessagesController {
           totalComments,
           savedComments: totalSaved,
           pageId: socialPage.page_id,
-        }
+        },
       };
     } catch (error) {
       return {
         success: false,
         message: `Failed to fetch page comments: ${error.message}`,
-        error: error.message
+        error: error.message,
       };
     }
   }
-
-
 
   /**
    * Helper endpoint: Get stored comments for a Facebook post
    */
   @Get('comments/post/:facebookPostId')
-  async getStoredCommentsByPost(@Param('facebookPostId') facebookPostId: string) {
+  async getStoredCommentsByPost(
+    @Param('facebookPostId') facebookPostId: string,
+  ) {
     try {
-      const comments = await this.socialMessagesService.findCommentsByFacebookPostId(facebookPostId);
-      
+      const comments =
+        await this.socialMessagesService.findCommentsByFacebookPostId(
+          facebookPostId,
+        );
+
       return {
         success: true,
         data: {
           postId: facebookPostId,
           totalComments: comments.length,
-          comments: comments.map(comment => ({
+          comments: comments.map((comment) => ({
             id: comment.id,
             facebook_comment_id: comment.facebook_comment_id,
             facebook_post_id: comment.facebook_post_id,
@@ -186,15 +193,15 @@ export class SocialMessagesController {
             created_at: comment.created_at,
             message_type: comment.message_type,
             analyzed_intent: comment.analyzed_intent,
-            sentiment: comment.sentiment
-          }))
-        }
+            sentiment: comment.sentiment,
+          })),
+        },
       };
     } catch (error) {
       return {
         success: false,
         message: `Failed to get stored comments: ${error.message}`,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -205,42 +212,51 @@ export class SocialMessagesController {
   @Get('comments/all')
   async getAllStoredComments(
     @Query('page') page: string = '1',
-    @Query('limit') limit: string = '10'
+    @Query('limit') limit: string = '10',
   ) {
     try {
       const pageNumber = parseInt(page) || 1;
       const limitNumber = parseInt(limit) || 10;
       const skip = (pageNumber - 1) * limitNumber;
 
-      const [comments, total] = await this.socialMessagesService.findAllCommentsWithPagination(skip, limitNumber);
-      
+      const [comments, total] =
+        await this.socialMessagesService.findAllCommentsWithPagination(
+          skip,
+          limitNumber,
+        );
+
       return {
         success: true,
         data: {
-          comments: comments.map(comment => ({
+          comments: comments.map((comment) => ({
             id: comment.id,
             facebook_comment_id: comment.facebook_comment_id,
             facebook_post_id: comment.facebook_post_id,
             parent_comment_id: comment.parent_comment_id,
             message_text: comment.message_text,
             sender_id: comment.sender_id,
-            received_at: comment.received_at,
-            created_at: comment.created_at,
-            message_type: comment.message_type
+            sender_name: comment.sender_name,
+            received_at: comment.received_at.toLocaleString('en-US', {
+              timeZone: 'Asia/Phnom_Penh',
+            }),
+            created_at: comment.created_at.toLocaleString('en-US', {
+              timeZone: 'Asia/Phnom_Penh',
+            }),
+            message_type: comment.message_type,
           })),
           pagination: {
             page: pageNumber,
             limit: limitNumber,
             total,
-            totalPages: Math.ceil(total / limitNumber)
-          }
-        }
+            totalPages: Math.ceil(total / limitNumber),
+          },
+        },
       };
     } catch (error) {
       return {
         success: false,
         message: `Failed to get comments: ${error.message}`,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -251,30 +267,38 @@ export class SocialMessagesController {
   @Get('comments/page/:socialPageId')
   async getCommentsByPage(@Param('socialPageId') socialPageId: string) {
     try {
-      const comments = await this.socialMessagesService.findCommentsBySocialPageId(socialPageId);
-      
+      const comments =
+        await this.socialMessagesService.findCommentsBySocialPageId(
+          socialPageId,
+        );
+
       return {
         success: true,
         data: {
           socialPageId,
           totalComments: comments.length,
-          comments: comments.map(comment => ({
+          comments: comments.map((comment) => ({
             id: comment.id,
             facebook_comment_id: comment.facebook_comment_id,
             facebook_post_id: comment.facebook_post_id,
             message_text: comment.message_text,
             sender_id: comment.sender_id,
             received_at: comment.received_at,
-            created_at: comment.created_at
-          }))
-        }
+            created_at: comment.created_at,
+          })),
+        },
       };
     } catch (error) {
       return {
         success: false,
         message: `Failed to get comments: ${error.message}`,
-        error: error.message
+        error: error.message,
       };
     }
+  }
+
+  @Get('unprocessed')
+  async findUnprocessed() {
+    return this.socialMessagesService.findUnprocessed();
   }
 }

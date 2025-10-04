@@ -8,6 +8,12 @@ export class CreateOrderDto {
   @IsInt()
   quantity?: number;
 
+  @IsString()
+  buyerId?: string;
+
+  @IsString()
+  buyerName?: string;
+
   // @IsEnum(StatusEnum)
   // status: StatusEnum;
 }
