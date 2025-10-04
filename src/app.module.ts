@@ -27,6 +27,7 @@ import { TelegrafModule } from 'nestjs-telegraf';
 import { telegrafSessionMiddleware } from 'middleware/telegraf-session.middleware';
 import { SHOPPIO_BOT_NAME } from './telegram_bot/telegram_bot.constants';
 import { OllamaAiModule } from './ollama_ai/ollama_ai.module';
+import { UnhandledExceptionLogger } from './common/unhandled-exception.logger';
 
 @Module({
   imports: [
@@ -81,6 +82,6 @@ import { OllamaAiModule } from './ollama_ai/ollama_ai.module';
   ],
   // imports: [UsersModule, BuyersModule, PagesModule, MessagesModule, AnalyzedMessagesModule, OrdersModule, AuthModule],
   controllers: [AppController],
-  providers: [AppService, GeminiService, AnalyzerService],
+  providers: [AppService, GeminiService, AnalyzerService, UnhandledExceptionLogger],
 })
 export class AppModule { }
