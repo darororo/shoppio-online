@@ -154,6 +154,57 @@ export class TelegramBotService {
     }
   }
 
+
+  async sendPhotoUrlMany(chatId: number, photoUrl: string[]): Promise<any> {
+    try {
+      const asyncResults: Promise<any>[] = [];
+      for (const photo of photoUrl) {
+        const result = this.bot.telegram.sendPhoto(chatId, photo);
+        asyncResults.push(result);
+      }
+      const results = await Promise.all(asyncResults);
+
+      return {
+        ok: true,
+        from: results[0].from,
+        chat: results[0].chat,
+      };
+    } catch (e) {
+      await this.bot.telegram.sendMessage(chatId, "nuh uh")
+      return {
+        ok: false,
+        error: (e as Error).message,
+      };
+    }
+  }
+
+
+  async sendPhotoFileMany(chatId: number, photos: Express.Multer.File[]): Promise<any> {
+    try {
+      const asyncResults: Promise<any>[] = [];
+      for (const photo of photos) {
+        const file = {
+          source: photo.buffer
+        }
+        const result = this.bot.telegram.sendPhoto(chatId, file);
+        asyncResults.push(result);
+      }
+      const results = await Promise.all(asyncResults);
+
+      return {
+        ok: true,
+        from: results[0].from,
+        chat: results[0].chat,
+      };
+    } catch (e) {
+      await this.bot.telegram.sendMessage(chatId, "nuh uh")
+      return {
+        ok: false,
+        error: (e as Error).message,
+      };
+    }
+  }
+
   // // ** Video Url is not supported
   // async sendVideoUrl(chatId: number, videoUrl: string): Promise<any> {
   //   try {
