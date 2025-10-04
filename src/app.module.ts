@@ -50,9 +50,9 @@ import { OllamaAiModule } from './ollama_ai/ollama_ai.module';
         token: process.env.SHOPPIO_BOT_TOKEN?.toString() || "",
         middlewares: [telegrafSessionMiddleware],
         include: [TelegramBotModule],
-        options: {
-          handlerTimeout: 1,
-        }
+        // options: {
+        //   handlerTimeout: 1,
+        // }
         // launchOptions: {
         //   webhook: {
         //     domain: process.env.BACKEND_HOST?.toString() || "",
