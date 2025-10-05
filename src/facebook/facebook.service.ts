@@ -1016,4 +1016,227 @@ export class FacebookService {
       );
     }
   }
+
+  /**
+   * Get conversations for a Facebook page
+   * @param pageId - The Facebook page ID
+   * @param pageAccessToken - Page access token
+   * @param platform - 'messenger' or 'instagram'
+   */
+  async getPageConversations(
+    pageId: string,
+    pageAccessToken: string,
+    platform: 'messenger' | 'instagram' = 'messenger'
+  ) {
+    try {
+      console.log(`📋 Fetching conversations for page ${pageId} on ${platform}`);
+
+      const url = `${this.facebookGraphURL}/${pageId}/conversations?platform=${platform}&access_token=${pageAccessToken}`;
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Facebook API error response:', error);
+        throw new Error(
+          error.error?.message || 'Failed to fetch page conversations',
+        );
+      }
+
+      const result = await response.json();
+      console.log(`✅ Successfully fetched ${result.data?.length || 0} conversations for page ${pageId}`);
+
+      return result;
+    } catch (error) {
+      console.error('❌ Failed to fetch page conversations:', error);
+      throw new BadRequestException(
+        `Failed to fetch page conversations: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Get messages from a specific conversation
+   * @param conversationId - The conversation ID
+   * @param pageAccessToken - Page access token
+   * @param fields - Fields to retrieve (default: 'messages{id,created_time,from,to,message}')
+   */
+  async getConversationMessages(
+    conversationId: string,
+    pageAccessToken: string,
+    fields: string = 'messages{id,created_time,from,to,message}'
+  ) {
+    try {
+      console.log(`📨 Fetching messages for conversation ${conversationId}`);
+
+      const url = `${this.facebookGraphURL}/${conversationId}?fields=${encodeURIComponent(fields)}&access_token=${pageAccessToken}`;
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Facebook API error response:', error);
+        throw new Error(
+          error.error?.message || 'Failed to fetch conversation messages',
+        );
+      }
+
+      const result = await response.json();
+      console.log(`✅ Successfully fetched ${result.messages?.data?.length || 0} messages for conversation ${conversationId}`);
+
+      return result;
+    } catch (error) {
+      console.error('❌ Failed to fetch conversation messages:', error);
+      throw new BadRequestException(
+        `Failed to fetch conversation messages: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Get user profile information by PSID (Page-Scoped ID)
+   * @param psid - Page-scoped ID of the user
+   * @param pageAccessToken - Page access token
+   * @param fields - Profile fields to retrieve
+   */
+  async getUserProfile(
+    psid: string,
+    pageAccessToken: string,
+    fields: string = 'first_name,last_name,profile_pic,locale,timezone,gender'
+  ) {
+    try {
+      console.log(`👤 Fetching user profile for PSID ${psid}`);
+
+      const url = `${this.facebookGraphURL}/${psid}?fields=${encodeURIComponent(fields)}&access_token=${pageAccessToken}`;
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Facebook API error response:', error);
+        
+        // Handle specific error for users without available profiles
+        if (error.error?.code === 2018218) {
+          console.warn('⚠️ No profile available for this user (phone number account)');
+          return {
+            first_name: 'Unknown',
+            last_name: 'User', 
+            profile_pic: null,
+            psid: psid
+          };
+        }
+        
+        throw new Error(
+          error.error?.message || 'Failed to fetch user profile',
+        );
+      }
+
+      const result = await response.json();
+      console.log(`✅ Successfully fetched profile for user: ${result.first_name} ${result.last_name}`);
+
+      return {
+        ...result,
+        psid: psid // Include the PSID for reference
+      };
+    } catch (error) {
+      console.error('❌ Failed to fetch user profile:', error);
+      // Return fallback profile instead of throwing error
+      return {
+        first_name: 'Unknown',
+        last_name: 'User',
+        profile_pic: null,
+        psid: psid,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Get conversations with user profiles for a Facebook page
+   * This combines conversations and user profile data
+   * @param pageId - The Facebook page ID
+   * @param pageAccessToken - Page access token 
+   * @param platform - 'messenger' or 'instagram'
+   */
+  async getPageConversationsWithProfiles(
+    pageId: string,
+    pageAccessToken: string,
+    platform: 'messenger' | 'instagram' = 'messenger'
+  ) {
+    try {
+      console.log(`🔄 Fetching conversations with profiles for page ${pageId}`);
+
+      // Get all conversations
+      const conversationsData = await this.getPageConversations(pageId, pageAccessToken, platform);
+      
+      if (!conversationsData.data || conversationsData.data.length === 0) {
+        return { data: [] };
+      }
+
+      // For each conversation, get messages and user profiles
+      const enrichedConversations = await Promise.all(
+        conversationsData.data.map(async (conversation: any) => {
+          try {
+            // Get messages for this conversation
+            const messagesData = await this.getConversationMessages(
+              conversation.id,
+              pageAccessToken,
+              'messages{id,created_time,from,to,message}'
+            );
+
+            // Extract unique user PSIDs from messages
+            const userPsids = new Set<string>();
+            messagesData.messages?.data?.forEach((message: any) => {
+              if (message.from && message.from.id !== pageId) {
+                userPsids.add(message.from.id);
+              }
+            });
+
+            // Get user profiles for all PSIDs
+            const userProfiles = await Promise.all(
+              Array.from(userPsids).map(async (psid) => {
+                return this.getUserProfile(psid, pageAccessToken);
+              })
+            );
+
+            // Create a profile lookup map
+            const profileMap = new Map();
+            userProfiles.forEach(profile => {
+              profileMap.set(profile.psid, profile);
+            });
+
+            return {
+              ...conversation,
+              messages: messagesData.messages?.data || [],
+              userProfiles: userProfiles,
+              profileMap: Object.fromEntries(profileMap)
+            };
+          } catch (error) {
+            console.error(`❌ Error processing conversation ${conversation.id}:`, error);
+            return {
+              ...conversation,
+              messages: [],
+              userProfiles: [],
+              profileMap: {},
+              error: error.message
+            };
+          }
+        })
+      );
+
+      console.log(`✅ Successfully enriched ${enrichedConversations.length} conversations with profiles`);
+      
+      return { 
+        data: enrichedConversations,
+        pageId,
+        platform,
+        total: enrichedConversations.length
+      };
+    } catch (error) {
+      console.error('❌ Failed to fetch conversations with profiles:', error);
+      throw new BadRequestException(
+        `Failed to fetch conversations with profiles: ${error.message}`,
+      );
+    }
+  }
 }

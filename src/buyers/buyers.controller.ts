@@ -39,4 +39,9 @@ export class BuyersController {
   remove(@Param('id') id: string) {
     return this.buyersService.remove(+id);
   }
+
+  @Get('with-interactions')
+  getBuyersWithInteractions() {
+    return this.buyersService.getBuyersWithInteractions();
+  }
 }

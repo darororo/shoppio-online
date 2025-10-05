@@ -182,4 +182,58 @@ export class FacebookController {
 
     return this.facebookService.fetchConversationParticipants(conversationId, accessToken, fields);
   }
+
+  /**
+   * Get all conversations for a Facebook page
+   * GET /facebook/page/:pageId/conversations?platform=messenger&access_token=PAGE_ACCESS_TOKEN
+   */
+  @Get('page/:pageId/conversations')
+  async getPageConversations(
+    @Param('pageId') pageId: string,
+    @Query('platform') platform: 'messenger' | 'instagram' = 'messenger',
+    @Query('access_token') accessToken: string,
+  ) {
+    if (!pageId || !accessToken) {
+      throw new BadRequestException('Page ID and access_token are required');
+    }
+
+    return this.facebookService.getPageConversations(pageId, accessToken, platform);
+  }
+
+
+
+  /**
+   * Get user profile by PSID (Page-Scoped ID)
+   * GET /facebook/user/:psid/profile?access_token=PAGE_ACCESS_TOKEN
+   */
+  @Get('user/:psid/profile')
+  async getUserProfile(
+    @Param('psid') psid: string,
+    @Query('fields') fields: string = 'first_name,last_name,profile_pic,locale,timezone,gender',
+    @Query('access_token') accessToken: string,
+  ) {
+    if (!psid || !accessToken) {
+      throw new BadRequestException('PSID and access_token are required');
+    }
+
+    return this.facebookService.getUserProfile(psid, accessToken, fields);
+  }
+
+  /**
+   * Get conversations with user profiles for a Facebook page
+   * This is the main endpoint that combines conversations and user profile data
+   * GET /facebook/page/:pageId/conversations-with-profiles?platform=messenger&access_token=PAGE_ACCESS_TOKEN
+   */
+  @Get('page/:pageId/conversations-with-profiles')
+  async getPageConversationsWithProfiles(
+    @Param('pageId') pageId: string,
+    @Query('platform') platform: 'messenger' | 'instagram' = 'messenger',
+    @Query('access_token') accessToken: string,
+  ) {
+    if (!pageId || !accessToken) {
+      throw new BadRequestException('Page ID and access_token are required');
+    }
+
+    return this.facebookService.getPageConversationsWithProfiles(pageId, accessToken, platform);
+  }
 }
