@@ -104,6 +104,8 @@ export class AnalyzerService {
           };
 
           const createOrderDto: CreateOrderDto = {
+            buyerId: msg.buyer_id,
+            buyerName: msg.buyer,
             product_name: analysis.product,
             quantity: analysis.quantity,
           };

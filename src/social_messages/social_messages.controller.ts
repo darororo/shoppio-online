@@ -47,6 +47,9 @@ export class SocialMessagesController {
         true,
       );
 
+      console.log('FACEBOOK COMMENTS');
+      console.log(comments);
+
       // Save comments to database
       const savedMessages =
         await this.socialMessagesService.saveFacebookComments(

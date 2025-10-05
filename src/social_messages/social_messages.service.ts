@@ -92,6 +92,9 @@ export class SocialMessagesService {
   ): Promise<SocialMessage[]> {
     const savedMessages: SocialMessage[] = [];
 
+    console.log('COMMENTS TO SAVE');
+    console.log(comments);
+
     for (const comment of comments) {
       try {
         // Check if comment already exists

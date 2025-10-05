@@ -1,10 +1,14 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { FacebookCommentResponse, FacebookCommentsListResponse, FacebookPostCommentsResponse } from './dto/facebook-comment.dto';
-import { 
-  FacebookConversationResponse, 
-  FacebookConversationsListResponse, 
-  FacebookMessageResponse, 
-  FacebookMessagesListResponse 
+import {
+  FacebookCommentResponse,
+  FacebookCommentsListResponse,
+  FacebookPostCommentsResponse,
+} from './dto/facebook-comment.dto';
+import {
+  FacebookConversationResponse,
+  FacebookConversationsListResponse,
+  FacebookMessageResponse,
+  FacebookMessagesListResponse,
 } from './dto/facebook-conversation.dto';
 
 export interface FacebookUploadSessionResponse {
@@ -36,32 +40,43 @@ export class FacebookService {
    * Step 1: Start upload session
    * Step 2: Upload file content
    */
-  async uploadFileToFacebook(file: any, userAccessToken: string, appId: string): Promise<FacebookUploadResult> {
-    console.log('📤 Starting Facebook file upload...', { 
-      fileName: file.originalname, 
-      fileSize: file.size, 
-      fileType: file.mimetype 
+  async uploadFileToFacebook(
+    file: any,
+    userAccessToken: string,
+    appId: string,
+  ): Promise<FacebookUploadResult> {
+    console.log('📤 Starting Facebook file upload...', {
+      fileName: file.originalname,
+      fileSize: file.size,
+      fileType: file.mimetype,
     });
-    
+
     try {
       // Step 1: Start upload session
-      const uploadSessionResponse = await this.startUploadSession(file, userAccessToken, appId) as FacebookUploadSessionResponse;
+      const uploadSessionResponse = (await this.startUploadSession(
+        file,
+        userAccessToken,
+        appId,
+      )) as FacebookUploadSessionResponse;
       const uploadSessionId = uploadSessionResponse.id;
-      
+
       console.log('📤 Upload session started:', uploadSessionId);
-      
+
       // Step 2: Upload file content
-      const uploadResponse = await this.uploadFileContent(file, userAccessToken, uploadSessionId) as FacebookUploadResponse;
-      
+      const uploadResponse = (await this.uploadFileContent(
+        file,
+        userAccessToken,
+        uploadSessionId,
+      )) as FacebookUploadResponse;
+
       console.log('📤 File uploaded successfully:', uploadResponse);
       console.log('📤 File handle:', uploadResponse.h);
-      
+
       if (!uploadResponse.h) {
         throw new Error('No file handle received from Facebook upload');
       }
-      
+
       return { success: true, handle: uploadResponse.h, uploadResponse };
-      
     } catch (error) {
       console.error('❌ Facebook file upload failed:', error);
       throw new BadRequestException(`File upload failed: ${error.message}`);
@@ -71,27 +86,34 @@ export class FacebookService {
   /**
    * Step 1: Start an upload session
    */
-  private async startUploadSession(file: any, userAccessToken: string, appId: string) {
+  private async startUploadSession(
+    file: any,
+    userAccessToken: string,
+    appId: string,
+  ) {
     console.log('📤 Starting upload session...');
-    
+
     try {
       const url = `${this.facebookGraphURL}/${appId}/uploads`;
       const params = new URLSearchParams({
         file_name: file.originalname,
         file_length: file.size.toString(),
         file_type: file.mimetype,
-        access_token: userAccessToken
+        access_token: userAccessToken,
       });
 
       const response = await fetch(`${url}?${params}`, {
         method: 'POST',
       });
 
-      const result = await response.json() as FacebookUploadSessionResponse & FacebookErrorResponse;
+      const result = (await response.json()) as FacebookUploadSessionResponse &
+        FacebookErrorResponse;
       console.log('📤 Upload session response:', result);
 
       if (!response.ok) {
-        throw new Error(result.error?.message || 'Failed to start upload session');
+        throw new Error(
+          result.error?.message || 'Failed to start upload session',
+        );
       }
 
       return result;
@@ -104,26 +126,33 @@ export class FacebookService {
   /**
    * Step 2: Upload file content
    */
-  private async uploadFileContent(file: any, userAccessToken: string, uploadSessionId: string) {
+  private async uploadFileContent(
+    file: any,
+    userAccessToken: string,
+    uploadSessionId: string,
+  ) {
     console.log('📤 Uploading file content...');
-    
+
     try {
       const url = `${this.facebookGraphURL}/${uploadSessionId}`;
 
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Authorization': `OAuth ${userAccessToken}`,
-          'file_offset': '0',
+          Authorization: `OAuth ${userAccessToken}`,
+          file_offset: '0',
         },
-        body: file.buffer
+        body: file.buffer,
       });
 
-      const result = await response.json() as FacebookUploadResponse & FacebookErrorResponse;
+      const result = (await response.json()) as FacebookUploadResponse &
+        FacebookErrorResponse;
       console.log('📤 File upload response:', result);
 
       if (!response.ok) {
-        throw new Error(result.error?.message || 'Failed to upload file content');
+        throw new Error(
+          result.error?.message || 'Failed to upload file content',
+        );
       }
 
       return result;
@@ -137,28 +166,34 @@ export class FacebookService {
    * Post photo using file handle
    */
   async postPhotoWithHandle(
-    pageId: string, 
-    pageAccessToken: string, 
-    fileHandle: string, 
-    options: any = {}
+    pageId: string,
+    pageAccessToken: string,
+    fileHandle: string,
+    options: any = {},
   ) {
     console.log('📸 Posting photo with handle...', { pageId, fileHandle });
-    
+
     try {
       const url = `${this.facebookGraphURL}/${pageId}/photos`;
-      
+
       const formData = new URLSearchParams();
       formData.append('fbuploader_photo_file_chunk', fileHandle);
       formData.append('access_token', pageAccessToken);
-      formData.append('published', String(options.published !== undefined ? options.published : true));
+      formData.append(
+        'published',
+        String(options.published !== undefined ? options.published : true),
+      );
 
       // Add optional fields
       if (options.caption) {
         formData.append('caption', options.caption);
       }
-      
+
       if (options.scheduled_publish_time) {
-        formData.append('scheduled_publish_time', options.scheduled_publish_time);
+        formData.append(
+          'scheduled_publish_time',
+          options.scheduled_publish_time,
+        );
         formData.append('published', 'false');
       }
 
@@ -170,7 +205,9 @@ export class FacebookService {
         body: formData,
       });
 
-      const result = await response.json() as FacebookErrorResponse & { id?: string };
+      const result = (await response.json()) as FacebookErrorResponse & {
+        id?: string;
+      };
       console.log('📸 Photo post response:', result);
 
       if (!response.ok) {
@@ -188,17 +225,17 @@ export class FacebookService {
    * Post video using file handle (method 1)
    */
   async postVideoWithHandle(
-    pageId: string, 
-    pageAccessToken: string, 
-    fileHandle: string, 
-    options: any = {}
+    pageId: string,
+    pageAccessToken: string,
+    fileHandle: string,
+    options: any = {},
   ) {
     console.log('🎥 Posting video with handle...', { pageId, fileHandle });
-    
+
     try {
       // Use the standard Graph API endpoint for videos with file handle
       const url = `${this.facebookGraphURL}/${pageId}/videos`;
-      
+
       const formData = new URLSearchParams();
       formData.append('file_handle', fileHandle);
       formData.append('access_token', pageAccessToken);
@@ -207,7 +244,7 @@ export class FacebookService {
       if (options.title) {
         formData.append('title', options.title);
       }
-      
+
       if (options.description) {
         formData.append('description', options.description);
       }
@@ -220,7 +257,9 @@ export class FacebookService {
         body: formData,
       });
 
-      const result = await response.json() as FacebookErrorResponse & { id?: string };
+      const result = (await response.json()) as FacebookErrorResponse & {
+        id?: string;
+      };
       console.log('🎥 Video post response:', result);
 
       if (!response.ok) {
@@ -238,25 +277,32 @@ export class FacebookService {
    * Post video using direct file upload (method 2 - fallback)
    */
   async postVideoWithDirectUpload(
-    pageId: string, 
-    pageAccessToken: string, 
-    file: any, 
-    options: any = {}
+    pageId: string,
+    pageAccessToken: string,
+    file: any,
+    options: any = {},
   ) {
-    console.log('🎥 Posting video with direct upload...', { pageId, fileName: file.originalname });
-    
+    console.log('🎥 Posting video with direct upload...', {
+      pageId,
+      fileName: file.originalname,
+    });
+
     try {
       const url = `${this.facebookGraphURL}/${pageId}/videos`;
-      
+
       const formData = new FormData();
-      formData.append('source', new Blob([file.buffer], { type: file.mimetype }), file.originalname);
+      formData.append(
+        'source',
+        new Blob([file.buffer], { type: file.mimetype }),
+        file.originalname,
+      );
       formData.append('access_token', pageAccessToken);
 
       // Add optional fields
       if (options.title) {
         formData.append('title', options.title);
       }
-      
+
       if (options.description) {
         formData.append('description', options.description);
       }
@@ -266,7 +312,9 @@ export class FacebookService {
         body: formData,
       });
 
-      const result = await response.json() as FacebookErrorResponse & { id?: string };
+      const result = (await response.json()) as FacebookErrorResponse & {
+        id?: string;
+      };
       console.log('🎥 Video direct upload response:', result);
 
       if (!response.ok) {
@@ -276,7 +324,9 @@ export class FacebookService {
       return result;
     } catch (error) {
       console.error('❌ Video direct upload failed:', error);
-      throw new BadRequestException(`Video direct upload failed: ${error.message}`);
+      throw new BadRequestException(
+        `Video direct upload failed: ${error.message}`,
+      );
     }
   }
 
@@ -289,14 +339,14 @@ export class FacebookService {
    * @returns Comments data from Facebook
    */
   async fetchPostComments(
-    postId: string, 
-    accessToken: string, 
+    postId: string,
+    accessToken: string,
     fields: string = 'id,message,created_time,from{id,name},parent',
-    limit: number = 100
+    limit: number = 100,
   ): Promise<FacebookCommentsListResponse> {
     try {
       console.log(`📥 Fetching comments for post ${postId}...`);
-      
+
       const url = `${this.facebookGraphURL}/${postId}/comments`;
       const params = new URLSearchParams({
         access_token: accessToken,
@@ -305,19 +355,23 @@ export class FacebookService {
       });
 
       const response = await fetch(`${url}?${params}`);
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error?.message || 'Failed to fetch comments');
       }
 
-      const result = await response.json() as FacebookCommentsListResponse;
-      console.log(`📥 Successfully fetched ${result.data?.length || 0} comments`);
-      
+      const result = (await response.json()) as FacebookCommentsListResponse;
+      console.log(
+        `📥 Successfully fetched ${result.data?.length || 0} comments`,
+      );
+
       return result;
     } catch (error) {
       console.error('❌ Failed to fetch post comments:', error);
-      throw new BadRequestException(`Failed to fetch post comments: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to fetch post comments: ${error.message}`,
+      );
     }
   }
 
@@ -333,11 +387,13 @@ export class FacebookService {
     pageId: string,
     accessToken: string,
     postLimit: number = 25,
-    commentLimit: number = 100
-  ): Promise<Array<{ postId: string, comments: FacebookCommentsListResponse }>> {
+    commentLimit: number = 100,
+  ): Promise<
+    Array<{ postId: string; comments: FacebookCommentsListResponse }>
+  > {
     try {
       console.log(`📥 Fetching posts with comments for page ${pageId}...`);
-      
+
       // First, get the page's posts
       const postsUrl = `${this.facebookGraphURL}/${pageId}/posts`;
       const postsParams = new URLSearchParams({
@@ -347,7 +403,7 @@ export class FacebookService {
       });
 
       const postsResponse = await fetch(`${postsUrl}?${postsParams}`);
-      
+
       if (!postsResponse.ok) {
         const error = await postsResponse.json();
         throw new Error(error.error?.message || 'Failed to fetch posts');
@@ -359,29 +415,46 @@ export class FacebookService {
       console.log(`📥 Found ${posts.length} posts, fetching comments...`);
 
       // Fetch comments for each post
-      const postsWithComments: Array<{ postId: string, comments: FacebookCommentsListResponse }> = [];
+      const postsWithComments: Array<{
+        postId: string;
+        comments: FacebookCommentsListResponse;
+      }> = [];
       for (const post of posts) {
         try {
-          const comments = await this.fetchPostComments(post.id, accessToken, undefined, commentLimit);
+          console.log('FETCHING COMMENT of POST');
+
+          const comments = await this.fetchPostComments(
+            post.id,
+            accessToken,
+            'id,message,created_time,from{id,name},parent',
+            commentLimit,
+          );
           postsWithComments.push({
             postId: post.id,
-            comments: comments
+            comments: comments,
           });
         } catch (error) {
-          console.warn(`⚠️ Failed to fetch comments for post ${post.id}:`, error.message);
+          console.warn(
+            `⚠️ Failed to fetch comments for post ${post.id}:`,
+            error.message,
+          );
           // Continue with other posts even if one fails
           postsWithComments.push({
             postId: post.id,
-            comments: { data: [] }
+            comments: { data: [] },
           });
         }
       }
 
-      console.log(`📥 Successfully fetched comments for ${postsWithComments.length} posts`);
+      console.log(
+        `📥 Successfully fetched comments for ${postsWithComments.length} posts`,
+      );
       return postsWithComments;
     } catch (error) {
       console.error('❌ Failed to fetch page posts with comments:', error);
-      throw new BadRequestException(`Failed to fetch page posts with comments: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to fetch page posts with comments: ${error.message}`,
+      );
     }
   }
 
@@ -395,11 +468,11 @@ export class FacebookService {
   async fetchCommentById(
     commentId: string,
     accessToken: string,
-    fields: string = 'id,message,created_time,from{id,name},parent'
+    fields: string = 'id,message,created_time,from{id,name},parent',
   ): Promise<FacebookCommentResponse> {
     try {
       console.log(`📥 Fetching comment ${commentId}...`);
-      
+
       const url = `${this.facebookGraphURL}/${commentId}`;
       const params = new URLSearchParams({
         access_token: accessToken,
@@ -407,19 +480,21 @@ export class FacebookService {
       });
 
       const response = await fetch(`${url}?${params}`);
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error?.message || 'Failed to fetch comment');
       }
 
-      const result = await response.json() as FacebookCommentResponse;
+      const result = (await response.json()) as FacebookCommentResponse;
       console.log(`📥 Successfully fetched comment ${commentId}`);
-      
+
       return result;
     } catch (error) {
       console.error('❌ Failed to fetch comment:', error);
-      throw new BadRequestException(`Failed to fetch comment: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to fetch comment: ${error.message}`,
+      );
     }
   }
 
@@ -433,20 +508,20 @@ export class FacebookService {
   async fetchAllPostComments(
     postId: string,
     accessToken: string,
-    fetchAll: boolean = true
+    fetchAll: boolean = true,
   ): Promise<FacebookCommentResponse[]> {
     try {
       console.log(`📥 Starting to fetch comments for post: ${postId}`);
       console.log(`📥 Access token provided: ${accessToken ? 'Yes' : 'No'}`);
       console.log(`📥 Access token length: ${accessToken?.length || 0}`);
-      
+
       const allComments: FacebookCommentResponse[] = [];
       let nextUrl: string | undefined;
       let isFirstRequest = true;
 
       do {
         let url: string;
-        
+
         if (isFirstRequest) {
           url = `${this.facebookGraphURL}/${postId}/comments`;
           const params = new URLSearchParams({
@@ -455,46 +530,56 @@ export class FacebookService {
             limit: '100',
           });
           url = `${url}?${params}`;
-          console.log(`📥 First request URL: ${url.replace(accessToken, 'HIDDEN_TOKEN')}`);
+          console.log(
+            `📥 First request URL: ${url.replace(accessToken, 'HIDDEN_TOKEN')}`,
+          );
           isFirstRequest = false;
         } else {
           url = nextUrl!;
-          console.log(`📥 Pagination request URL: ${url.replace(accessToken, 'HIDDEN_TOKEN')}`);
+          console.log(
+            `📥 Pagination request URL: ${url.replace(accessToken, 'HIDDEN_TOKEN')}`,
+          );
         }
 
         console.log(`📥 Making request to Facebook API...`);
         const response = await fetch(url);
-        
+        console.log(response);
+
         console.log(`📥 Facebook API response status: ${response.status}`);
-        
+
         if (!response.ok) {
           const error = await response.json();
           console.error('❌ Facebook API error response:', error);
           throw new Error(error.error?.message || 'Failed to fetch comments');
         }
 
-        const result = await response.json() as FacebookCommentsListResponse;
+        const result = (await response.json()) as FacebookCommentsListResponse;
         console.log(`📥 Facebook API response:`, {
           dataLength: result.data?.length || 0,
           hasNextPage: !!result.paging?.next,
-          result: result
+          result: result,
         });
-        
+
         if (result.data) {
           allComments.push(...result.data);
         }
 
         nextUrl = result.paging?.next;
-        
-        console.log(`📥 Fetched ${result.data?.length || 0} comments, total: ${allComments.length}`);
-        
+
+        console.log(
+          `📥 Fetched ${result.data?.length || 0} comments, total: ${allComments.length}`,
+        );
       } while (fetchAll && nextUrl);
 
-      console.log(`📥 Finished fetching all comments. Total: ${allComments.length}`);
+      console.log(
+        `📥 Finished fetching all comments. Total: ${allComments.length}`,
+      );
       return allComments;
     } catch (error) {
       console.error('❌ Failed to fetch all post comments:', error);
-      throw new BadRequestException(`Failed to fetch all post comments: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to fetch all post comments: ${error.message}`,
+      );
     }
   }
 
@@ -510,11 +595,13 @@ export class FacebookService {
     pageId: string,
     pageAccessToken: string,
     platform: 'messenger' | 'instagram' = 'messenger',
-    limit: number = 100
+    limit: number = 100,
   ): Promise<FacebookConversationsListResponse> {
     try {
-      console.log(`💬 Fetching conversations for page ${pageId} on ${platform}...`);
-      
+      console.log(
+        `💬 Fetching conversations for page ${pageId} on ${platform}...`,
+      );
+
       const url = `${this.facebookGraphURL}/${pageId}/conversations`;
       const params = new URLSearchParams({
         access_token: pageAccessToken,
@@ -523,20 +610,27 @@ export class FacebookService {
       });
 
       const response = await fetch(`${url}?${params}`);
-      
+
       if (!response.ok) {
         const error = await response.json();
         console.error('❌ Facebook API error response:', error);
-        throw new Error(error.error?.message || 'Failed to fetch conversations');
+        throw new Error(
+          error.error?.message || 'Failed to fetch conversations',
+        );
       }
 
-      const result = await response.json() as FacebookConversationsListResponse;
-      console.log(`💬 Successfully fetched ${result.data?.length || 0} conversations`);
-      
+      const result =
+        (await response.json()) as FacebookConversationsListResponse;
+      console.log(
+        `💬 Successfully fetched ${result.data?.length || 0} conversations`,
+      );
+
       return result;
     } catch (error) {
       console.error('❌ Failed to fetch page conversations:', error);
-      throw new BadRequestException(`Failed to fetch page conversations: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to fetch page conversations: ${error.message}`,
+      );
     }
   }
 
@@ -552,18 +646,20 @@ export class FacebookService {
     pageId: string,
     pageAccessToken: string,
     platform: 'messenger' | 'instagram' = 'messenger',
-    fetchAll: boolean = true
+    fetchAll: boolean = true,
   ): Promise<FacebookConversationResponse[]> {
     try {
-      console.log(`💬 Starting to fetch all conversations for page: ${pageId} on ${platform}`);
-      
+      console.log(
+        `💬 Starting to fetch all conversations for page: ${pageId} on ${platform}`,
+      );
+
       const allConversations: FacebookConversationResponse[] = [];
       let nextUrl: string | undefined;
       let isFirstRequest = true;
 
       do {
         let url: string;
-        
+
         if (isFirstRequest) {
           url = `${this.facebookGraphURL}/${pageId}/conversations`;
           const params = new URLSearchParams({
@@ -572,45 +668,57 @@ export class FacebookService {
             limit: '100',
           });
           url = `${url}?${params}`;
-          console.log(`💬 First request URL: ${url.replace(pageAccessToken, 'HIDDEN_TOKEN')}`);
+          console.log(
+            `💬 First request URL: ${url.replace(pageAccessToken, 'HIDDEN_TOKEN')}`,
+          );
           isFirstRequest = false;
         } else {
           url = nextUrl!;
-          console.log(`💬 Pagination request URL: ${url.replace(pageAccessToken, 'HIDDEN_TOKEN')}`);
+          console.log(
+            `💬 Pagination request URL: ${url.replace(pageAccessToken, 'HIDDEN_TOKEN')}`,
+          );
         }
 
         console.log(`💬 Making request to Facebook API...`);
         const response = await fetch(url);
-        
+
         console.log(`💬 Facebook API response status: ${response.status}`);
-        
+
         if (!response.ok) {
           const error = await response.json();
           console.error('❌ Facebook API error response:', error);
-          throw new Error(error.error?.message || 'Failed to fetch conversations');
+          throw new Error(
+            error.error?.message || 'Failed to fetch conversations',
+          );
         }
 
-        const result = await response.json() as FacebookConversationsListResponse;
+        const result =
+          (await response.json()) as FacebookConversationsListResponse;
         console.log(`💬 Facebook API response:`, {
           dataLength: result.data?.length || 0,
           hasNextPage: !!result.paging?.next,
         });
-        
+
         if (result.data) {
           allConversations.push(...result.data);
         }
 
         nextUrl = result.paging?.next;
-        
-        console.log(`💬 Fetched ${result.data?.length || 0} conversations, total: ${allConversations.length}`);
-        
+
+        console.log(
+          `💬 Fetched ${result.data?.length || 0} conversations, total: ${allConversations.length}`,
+        );
       } while (fetchAll && nextUrl);
 
-      console.log(`💬 Finished fetching all conversations. Total: ${allConversations.length}`);
+      console.log(
+        `💬 Finished fetching all conversations. Total: ${allConversations.length}`,
+      );
       return allConversations;
     } catch (error) {
       console.error('❌ Failed to fetch all page conversations:', error);
-      throw new BadRequestException(`Failed to fetch all page conversations: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to fetch all page conversations: ${error.message}`,
+      );
     }
   }
 
@@ -626,11 +734,13 @@ export class FacebookService {
     pageId: string,
     pageAccessToken: string,
     userId: string,
-    platform: 'messenger' | 'instagram' = 'messenger'
+    platform: 'messenger' | 'instagram' = 'messenger',
   ): Promise<FacebookConversationResponse | null> {
     try {
-      console.log(`💬 Finding conversation between page ${pageId} and user ${userId} on ${platform}...`);
-      
+      console.log(
+        `💬 Finding conversation between page ${pageId} and user ${userId} on ${platform}...`,
+      );
+
       const url = `${this.facebookGraphURL}/${pageId}/conversations`;
       const params = new URLSearchParams({
         access_token: pageAccessToken,
@@ -639,25 +749,30 @@ export class FacebookService {
       });
 
       const response = await fetch(`${url}?${params}`);
-      
+
       if (!response.ok) {
         const error = await response.json();
         console.error('❌ Facebook API error response:', error);
         throw new Error(error.error?.message || 'Failed to find conversation');
       }
 
-      const result = await response.json() as FacebookConversationsListResponse;
-      
+      const result =
+        (await response.json()) as FacebookConversationsListResponse;
+
       if (result.data && result.data.length > 0) {
         console.log(`💬 Found conversation: ${result.data[0].id}`);
         return result.data[0];
       } else {
-        console.log(`💬 No conversation found between page ${pageId} and user ${userId}`);
+        console.log(
+          `💬 No conversation found between page ${pageId} and user ${userId}`,
+        );
         return null;
       }
     } catch (error) {
       console.error('❌ Failed to find conversation with user:', error);
-      throw new BadRequestException(`Failed to find conversation with user: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to find conversation with user: ${error.message}`,
+      );
     }
   }
 
@@ -671,11 +786,11 @@ export class FacebookService {
   async fetchConversationMessages(
     conversationId: string,
     pageAccessToken: string,
-    limit: number = 100
+    limit: number = 100,
   ): Promise<FacebookMessagesListResponse> {
     try {
       console.log(`💬 Fetching messages for conversation ${conversationId}...`);
-      
+
       const url = `${this.facebookGraphURL}/${conversationId}`;
       const params = new URLSearchParams({
         access_token: pageAccessToken,
@@ -684,20 +799,29 @@ export class FacebookService {
       });
 
       const response = await fetch(`${url}?${params}`);
-      
+
       if (!response.ok) {
         const error = await response.json();
         console.error('❌ Facebook API error response:', error);
-        throw new Error(error.error?.message || 'Failed to fetch conversation messages');
+        throw new Error(
+          error.error?.message || 'Failed to fetch conversation messages',
+        );
       }
 
-      const result = await response.json() as { messages: FacebookMessagesListResponse, id: string };
-      console.log(`💬 Successfully fetched ${result.messages?.data?.length || 0} messages`);
-      
+      const result = (await response.json()) as {
+        messages: FacebookMessagesListResponse;
+        id: string;
+      };
+      console.log(
+        `💬 Successfully fetched ${result.messages?.data?.length || 0} messages`,
+      );
+
       return result.messages;
     } catch (error) {
       console.error('❌ Failed to fetch conversation messages:', error);
-      throw new BadRequestException(`Failed to fetch conversation messages: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to fetch conversation messages: ${error.message}`,
+      );
     }
   }
 
@@ -711,11 +835,11 @@ export class FacebookService {
   async fetchMessageDetails(
     messageId: string,
     pageAccessToken: string,
-    fields: string = 'id,created_time,from,to,message'
+    fields: string = 'id,created_time,from,to,message',
   ): Promise<FacebookMessageResponse> {
     try {
       console.log(`💬 Fetching details for message ${messageId}...`);
-      
+
       const url = `${this.facebookGraphURL}/${messageId}`;
       const params = new URLSearchParams({
         access_token: pageAccessToken,
@@ -723,20 +847,24 @@ export class FacebookService {
       });
 
       const response = await fetch(`${url}?${params}`);
-      
+
       if (!response.ok) {
         const error = await response.json();
         console.error('❌ Facebook API error response:', error);
-        throw new Error(error.error?.message || 'Failed to fetch message details');
+        throw new Error(
+          error.error?.message || 'Failed to fetch message details',
+        );
       }
 
-      const result = await response.json() as FacebookMessageResponse;
+      const result = (await response.json()) as FacebookMessageResponse;
       console.log(`💬 Successfully fetched message details for ${messageId}`);
-      
+
       return result;
     } catch (error) {
       console.error('❌ Failed to fetch message details:', error);
-      throw new BadRequestException(`Failed to fetch message details: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to fetch message details: ${error.message}`,
+      );
     }
   }
 
@@ -750,19 +878,21 @@ export class FacebookService {
   async fetchAllConversationMessages(
     conversationId: string,
     pageAccessToken: string,
-    fetchAll: boolean = true
+    fetchAll: boolean = true,
   ): Promise<FacebookMessageResponse[]> {
     try {
-      console.log(`💬 Starting to fetch all messages for conversation: ${conversationId}`);
-      
+      console.log(
+        `💬 Starting to fetch all messages for conversation: ${conversationId}`,
+      );
+
       // First get all message IDs
-      const allMessageIds: { id: string, created_time: string }[] = [];
+      const allMessageIds: { id: string; created_time: string }[] = [];
       let nextUrl: string | undefined;
       let isFirstRequest = true;
 
       do {
         let url: string;
-        
+
         if (isFirstRequest) {
           url = `${this.facebookGraphURL}/${conversationId}`;
           const params = new URLSearchParams({
@@ -776,50 +906,67 @@ export class FacebookService {
         }
 
         const response = await fetch(url);
-        
+
         if (!response.ok) {
           const error = await response.json();
           throw new Error(error.error?.message || 'Failed to fetch messages');
         }
 
-        const result = await response.json() as { messages: FacebookMessagesListResponse, id: string };
-        
+        const result = (await response.json()) as {
+          messages: FacebookMessagesListResponse;
+          id: string;
+        };
+
         if (result.messages?.data) {
           allMessageIds.push(...result.messages.data);
         }
 
         nextUrl = result.messages?.paging?.next;
-        
-        console.log(`💬 Fetched ${result.messages?.data?.length || 0} message IDs, total: ${allMessageIds.length}`);
-        
+
+        console.log(
+          `💬 Fetched ${result.messages?.data?.length || 0} message IDs, total: ${allMessageIds.length}`,
+        );
       } while (fetchAll && nextUrl);
 
       // Now fetch details for the most recent 20 messages (API limitation)
       const recentMessageIds = allMessageIds.slice(0, 20);
       const messagesWithDetails: FacebookMessageResponse[] = [];
 
-      console.log(`💬 Fetching details for ${recentMessageIds.length} most recent messages...`);
+      console.log(
+        `💬 Fetching details for ${recentMessageIds.length} most recent messages...`,
+      );
 
       for (const messageInfo of recentMessageIds) {
         try {
-          const messageDetails = await this.fetchMessageDetails(messageInfo.id, pageAccessToken);
+          const messageDetails = await this.fetchMessageDetails(
+            messageInfo.id,
+            pageAccessToken,
+          );
           messagesWithDetails.push(messageDetails);
         } catch (error) {
-          console.warn(`⚠️ Failed to fetch details for message ${messageInfo.id}:`, error.message);
+          console.warn(
+            `⚠️ Failed to fetch details for message ${messageInfo.id}:`,
+            error.message,
+          );
           // Add basic message info even if details fetch fails
           messagesWithDetails.push({
             id: messageInfo.id,
             created_time: messageInfo.created_time,
-            message: 'Unable to fetch message details - may be older than 20 most recent messages'
+            message:
+              'Unable to fetch message details - may be older than 20 most recent messages',
           } as FacebookMessageResponse);
         }
       }
 
-      console.log(`💬 Finished fetching message details. Total messages: ${allMessageIds.length}, with details: ${messagesWithDetails.length}`);
+      console.log(
+        `💬 Finished fetching message details. Total messages: ${allMessageIds.length}, with details: ${messagesWithDetails.length}`,
+      );
       return messagesWithDetails;
     } catch (error) {
       console.error('❌ Failed to fetch all conversation messages:', error);
-      throw new BadRequestException(`Failed to fetch all conversation messages: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to fetch all conversation messages: ${error.message}`,
+      );
     }
   }
 
@@ -833,11 +980,13 @@ export class FacebookService {
   async fetchConversationParticipants(
     conversationId: string,
     pageAccessToken: string,
-    fields: string = 'id,name,participants'
+    fields: string = 'id,name,participants',
   ): Promise<any> {
     try {
-      console.log(`💬 Fetching participants for conversation ${conversationId}...`);
-      
+      console.log(
+        `💬 Fetching participants for conversation ${conversationId}...`,
+      );
+
       const url = `${this.facebookGraphURL}/${conversationId}`;
       const params = new URLSearchParams({
         access_token: pageAccessToken,
@@ -845,20 +994,26 @@ export class FacebookService {
       });
 
       const response = await fetch(`${url}?${params}`);
-      
+
       if (!response.ok) {
         const error = await response.json();
         console.error('❌ Facebook API error response:', error);
-        throw new Error(error.error?.message || 'Failed to fetch conversation participants');
+        throw new Error(
+          error.error?.message || 'Failed to fetch conversation participants',
+        );
       }
 
       const result = await response.json();
-      console.log(`💬 Successfully fetched conversation participants for ${conversationId}`);
-      
+      console.log(
+        `💬 Successfully fetched conversation participants for ${conversationId}`,
+      );
+
       return result;
     } catch (error) {
       console.error('❌ Failed to fetch conversation participants:', error);
-      throw new BadRequestException(`Failed to fetch conversation participants: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to fetch conversation participants: ${error.message}`,
+      );
     }
   }
 }
