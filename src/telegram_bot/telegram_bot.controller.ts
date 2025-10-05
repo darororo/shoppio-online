@@ -1,6 +1,6 @@
 
 
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFile, UploadedFiles } from '@nestjs/common';
 import { TelegramBotService } from './telegram_bot.service';
 import { Ctx, InjectBot, Start, Update } from 'nestjs-telegraf';
 import { Context, Telegraf } from 'telegraf';
@@ -8,7 +8,7 @@ import { SHOPPIO_BOT_NAME } from './telegram_bot.constants';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TelegramChatEntity } from './entities/telegram_chat.entity';
 import { Repository } from 'typeorm';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 
 
 @Controller('telegram-bot')
@@ -43,17 +43,17 @@ export class TelegramBotController {
   }
 
   @Post("/send-photo-many")
-  @UseInterceptors(FileInterceptor('photos'))
-  async sendPhotoMany(@Body("chatId") chatId: string, @Body("photoUrls") photoUrls: string[], @UploadedFile() photos: Express.Multer.File[]) {
+  @UseInterceptors(FilesInterceptor('photos'))
+  async sendPhotoMany(@Body("chatId") chatId: string, @Body("photoUrls") photoUrls: string[], @UploadedFiles() photos: Express.Multer.File[]) {
     if (photoUrls.length > 0) return this.botService.sendPhotoUrlMany(chatId, photoUrls);
 
     return this.botService.sendPhotoFileMany(chatId, photos);
   }
 
   @Post("/send-photo-many-to-chats")
-  @UseInterceptors(FileInterceptor('photos'))
-  async sendPhotoManyToChats(@Body("chatIds") chatIds: string[], @Body("photoUrls") photoUrls: string[], @UploadedFile() photos: Express.Multer.File[]) {
-    if (photoUrls.length > 0) return this.botService.sendPhotoUrlManyToChats(chatIds, photoUrls);
+  @UseInterceptors(FilesInterceptor('photos'))
+  async sendPhotoManyToChats(@Body("chatIds") chatIds: string[], @UploadedFiles() photos: Express.Multer.File[]) {
+    // if (photoUrls.length > 0) return this.botService.sendPhotoUrlManyToChats(chatIds, photoUrls);
     return this.botService.sendPhotoFileManyToChats(chatIds, photos);
   }
 
