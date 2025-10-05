@@ -8,6 +8,7 @@ import { error, log } from 'console';
 import { BOT_AI, SHOPPIO_BOT_NAME } from './telegram_bot.constants';
 import { Ctx, InjectBot } from 'nestjs-telegraf';
 import { TelegramChatEntity } from './entities/telegram_chat.entity';
+import { CreateTelegramChatDto } from './dto/create-telegram-chat.dto';
 
 @Injectable()
 export class TelegramBotService {
@@ -37,7 +38,7 @@ export class TelegramBotService {
     }
   }
 
-  async getChat(chatId: number): Promise<any> {
+  async getChat(chatId: string): Promise<any> {
     try {
       const chat = (await this.bot.telegram.getChat(chatId));
       return chat;
@@ -51,7 +52,11 @@ export class TelegramBotService {
 
   async getAllChats(): Promise<any> {
     try {
-      return this.chatRepo.find();
+      console.log("LOL");
+      const botId = (await this.bot.telegram.getMe()).id.toString();
+      console.log("LOL2");
+      console.log(botId)
+      return this.chatRepo.find({ where: { botId } });
     } catch (e) {
       return {
         ok: false,
@@ -60,7 +65,7 @@ export class TelegramBotService {
     }
   }
 
-  async enableAi(botId: number) {
+  async enableAi(botId: string) {
     try {
       let setting = await this.getSetting(botId, BOT_AI)
       if (!setting) {
@@ -75,7 +80,7 @@ export class TelegramBotService {
     }
   }
 
-  async disableAi(botId: number) {
+  async disableAi(botId: string) {
     try {
       let setting = await this.getSetting(botId, BOT_AI)
       if (!setting) {
@@ -90,7 +95,7 @@ export class TelegramBotService {
     }
   }
 
-  async getSettings(botId: number) {
+  async getSettings(botId: string) {
     try {
       const result = await this.settingRepo.find({ where: { botId: botId } });
       return result
@@ -99,7 +104,7 @@ export class TelegramBotService {
     }
   }
 
-  async getSetting(botId: number, setting: string) {
+  async getSetting(botId: string, setting: string) {
     try {
       const result = await this.settingRepo.findOne({ where: { botId: botId, setting: setting } });
       return result
@@ -108,7 +113,7 @@ export class TelegramBotService {
     }
   }
 
-  async isSettingEnabled(botId: number, setting: string) {
+  async isSettingEnabled(botId: string, setting: string) {
     try {
       const result = await this.settingRepo.findOne({ where: { botId: botId, setting: setting } });
       return result?.state ?? false;
@@ -117,7 +122,7 @@ export class TelegramBotService {
     }
   }
 
-  async sendPhotoUrl(chatId: number, photoUrl: string): Promise<any> {
+  async sendPhotoUrl(chatId: string, photoUrl: string): Promise<any> {
     try {
       const result = await this.bot.telegram.sendPhoto(chatId, photoUrl);
       return {
@@ -134,7 +139,7 @@ export class TelegramBotService {
     }
   }
 
-  async sendPhotoFile(chatId: number, photo: Express.Multer.File): Promise<any> {
+  async sendPhotoFile(chatId: string, photo: Express.Multer.File): Promise<any> {
     try {
       const file = {
         source: photo.buffer,
@@ -155,7 +160,7 @@ export class TelegramBotService {
   }
 
 
-  async sendPhotoUrlMany(chatId: number, photoUrl: string[]): Promise<any> {
+  async sendPhotoUrlMany(chatId: string, photoUrl: string[]): Promise<any> {
     try {
       const asyncResults: Promise<any>[] = [];
       for (const photo of photoUrl) {
@@ -179,7 +184,7 @@ export class TelegramBotService {
   }
 
 
-  async sendPhotoFileMany(chatId: number, photos: Express.Multer.File[]): Promise<any> {
+  async sendPhotoFileMany(chatId: string, photos: Express.Multer.File[]): Promise<any> {
     try {
       const asyncResults: Promise<any>[] = [];
       for (const photo of photos) {
@@ -205,25 +210,7 @@ export class TelegramBotService {
     }
   }
 
-  // // ** Video Url is not supported
-  // async sendVideoUrl(chatId: number, videoUrl: string): Promise<any> {
-  //   try {
-  //     const result = await this.bot.telegram.sendVideo(chatId, videoUrl);
-  //     return {
-  //       ok: true,
-  //       from: result.from,
-  //       chat: result.chat,
-  //     };
-  //   } catch (e) {
-  //     await this.bot.telegram.sendMessage(chatId, "nuh uh")
-  //     return {
-  //       ok: false,
-  //       error: (e as Error).message,
-  //     };
-  //   }
-  // }
-
-  async sendVideoFile(chatId: number, photo: Express.Multer.File): Promise<any> {
+  async sendVideoFile(chatId: string, photo: Express.Multer.File): Promise<any> {
     try {
       const file = {
         source: photo.buffer,
@@ -242,4 +229,22 @@ export class TelegramBotService {
       };
     }
   }
+
+  async saveChat(chat: CreateTelegramChatDto) {
+    try {
+      const result = await this.chatRepo.save(chat);
+      return {
+        ok: true,
+        result: result
+      }
+    } catch (e) {
+      console.error('Error saving chat:', e);
+      return {
+        ok: false,
+        error: e instanceof Error ? e.message : 'Unknown error occurred',
+      };
+    }
+  }
+
+
 }

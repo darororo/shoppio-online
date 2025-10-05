@@ -25,8 +25,8 @@ export class TelegramBotController {
   }
 
   @Get("/chat")
-  async getChat(@Query("chatId") chatId: String): Promise<any> {
-    return this.botService.getChat(Number(chatId));
+  async getChat(@Query("chatId") chatId: string): Promise<any> {
+    return this.botService.getChat(chatId);
   }
 
   @Get("/chats")
@@ -36,7 +36,7 @@ export class TelegramBotController {
 
   @Post("/send-photo")
   @UseInterceptors(FileInterceptor('photo'))
-  async sendPhoto(@Body("chatId") chatId: number, @Body("photoUrl") photoUrl: string, @UploadedFile() photo: Express.Multer.File) {
+  async sendPhoto(@Body("chatId") chatId: string, @Body("photoUrl") photoUrl: string, @UploadedFile() photo: Express.Multer.File) {
     if (photoUrl) return this.botService.sendPhotoUrl(chatId, photoUrl);
 
     return this.botService.sendPhotoFile(chatId, photo);
@@ -44,7 +44,7 @@ export class TelegramBotController {
 
   @Post("/send-photo-many")
   @UseInterceptors(FileInterceptor('photos'))
-  async sendPhotoMany(@Body("chatId") chatId: number, @Body("photoUrls") photoUrls: string[], @UploadedFile() photos: Express.Multer.File[]) {
+  async sendPhotoMany(@Body("chatId") chatId: string, @Body("photoUrls") photoUrls: string[], @UploadedFile() photos: Express.Multer.File[]) {
     if (photoUrls.length > 0) return this.botService.sendPhotoUrlMany(chatId, photoUrls);
 
     return this.botService.sendPhotoFileMany(chatId, photos);
@@ -52,7 +52,7 @@ export class TelegramBotController {
 
   @Post("/send-video")
   @UseInterceptors(FileInterceptor('video'))
-  async sendVideo(@Body("chatId") chatId: number, @UploadedFile() video: Express.Multer.File) {
+  async sendVideo(@Body("chatId") chatId: string, @UploadedFile() video: Express.Multer.File) {
     return this.botService.sendVideoFile(chatId, video);
   }
 }

@@ -8,17 +8,19 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { UserRole } from '../enum/roles';
+import { TelegramChatEntity } from 'src/telegram_bot/entities/telegram_chat.entity';
 
 @Entity('users') // main user table for login and manage system
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-  
+
   @Column({ unique: true })
   facebookId: string;
 
@@ -32,8 +34,8 @@ export class User {
   profilePicture: string | null;
 
   // Encrypted Facebook access token storage
-  @Column({ 
-    type: 'text', 
+  @Column({
+    type: 'text',
     nullable: true,
     transformer: {
       to: (value: string) => value ? EncryptionUtil.encrypt(value) : null,
@@ -42,34 +44,37 @@ export class User {
   })
   accessToken: string;
 
-  @Column({ 
+  @Column({
     type: 'enum',
     enum: UserRole,
     default: UserRole.USER
   })
   role: UserRole;
 
-  @Column({nullable:true, unique:true})
-  phone_number:string;
- 
+  @Column({ nullable: true, unique: true })
+  phone_number: string;
+
   @Column({ type: 'boolean', default: false })
-  isActive:boolean;
+  isActive: boolean;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
   createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
   updatedAt: Date;
-  
+
 
   @Column({ type: 'timestamp', nullable: true })
   lastLoginAt: Date;
 
-  @OneToMany(()=> SocialAccount,(socialAccount)=> socialAccount.user,{
-    cascade:true,
+  @OneToMany(() => SocialAccount, (socialAccount) => socialAccount.user, {
+    cascade: true,
   })
   socialAccount: SocialAccount[];
 
-  @OneToMany(()=> Post,(post)=> post.user)
+  @OneToMany(() => Post, (post) => post.user)
   posts: Post[];
+
+  @ManyToMany(() => TelegramChatEntity, (chat) => chat.users)
+  telegramChats: TelegramChatEntity[]
 }

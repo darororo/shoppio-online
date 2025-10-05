@@ -1,13 +1,13 @@
-import { Column, Entity, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { TelegramBotEntity } from "./telegram_bot.entity";
+import { User } from "src/users/entities/user.entity";
 
 @Entity()
 export class TelegramChatEntity {
-    @PrimaryGeneratedColumn()
-    id: string;
-
-    @Column({ type: 'bigint' })
-    chatId: number;
+    @PrimaryColumn()
+    chatId: string;
+    @PrimaryColumn()
+    botId: string
 
     @Column()
     title: string;
@@ -15,6 +15,12 @@ export class TelegramChatEntity {
     @Column()
     type: string;
 
-    @ManyToOne(() => TelegramBotEntity, (bot) => bot.chats)
-    bot: TelegramBotEntity
+
+    @ManyToMany(() => User, (user) => user.telegramChats)
+    @JoinTable()
+    users: User[]
+
+    // @ManyToOne(() => TelegramBotEntity, (bot) => bot.chats)
+    // @JoinColumn({ name: 'botId' })
+    // bot: TelegramBotEntity
 }

@@ -11,6 +11,6 @@ export class TelegramBotSettingEntity {
     @Column()
     state: boolean;
 
-    @Column({ type: 'bigint' })
-    botId: number;
+    @Column()
+    botId: string;
 }

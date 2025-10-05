@@ -129,23 +129,30 @@ export class TelegramBotUpdate {
 
     @On("new_chat_members")
     async onAddedToChat(@Ctx() ctx: Context) {
-        const chat = await ctx.getChat();
-        const type = chat.type;
-        const id = chat.id;
+        try {
+            console.log('I AM ADDED')
+            const chat = await ctx.getChat();
+            const type = chat.type;
+            const id = chat.id;
+            const chatId = chat.id;
+            const botId = (await ctx.telegram.getMe()).id.toString();
 
+            const result = await this.botService.saveChat({
+                chatId: chatId,
+                botId: botId,
+                title: chat.title,
+                type: type,
+            });
 
-        const chatId = chat.id;
-        const botId = (await ctx.telegram.getMe()).id;
+            console.log("I AM ADDED TO A NEW CHAT")
+            console.log(ctx)
+            console.log((await ctx.getChat()).id)
+            return "BONJOUR"
 
-        const bruh = await this.chatRepo.save({
-            chatId: chatId,
-            title: chat.title,
-            type: type
-        });
+        } catch (e) {
+            console.error(e)
+            return "nuh uh";
+        }
 
-        console.log("I AM ADDED TO A NEW CHAT")
-        console.log(ctx)
-        console.log((await ctx.getChat()).id)
-        return "BONJOUR"
     }
 }
