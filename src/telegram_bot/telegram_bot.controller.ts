@@ -50,6 +50,13 @@ export class TelegramBotController {
     return this.botService.sendPhotoFileMany(chatId, photos);
   }
 
+  @Post("/send-photo-many-to-chats")
+  @UseInterceptors(FileInterceptor('photos'))
+  async sendPhotoManyToChats(@Body("chatIds") chatIds: string[], @Body("photoUrls") photoUrls: string[], @UploadedFile() photos: Express.Multer.File[]) {
+    if (photoUrls.length > 0) return this.botService.sendPhotoUrlManyToChats(chatIds, photoUrls);
+    return this.botService.sendPhotoFileManyToChats(chatIds, photos);
+  }
+
   @Post("/send-video")
   @UseInterceptors(FileInterceptor('video'))
   async sendVideo(@Body("chatId") chatId: string, @UploadedFile() video: Express.Multer.File) {

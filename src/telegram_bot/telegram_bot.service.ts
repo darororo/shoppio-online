@@ -210,6 +210,55 @@ export class TelegramBotService {
     }
   }
 
+  async sendPhotoFileManyToChats(chatIds: string[], photos: Express.Multer.File[]): Promise<any> {
+    try {
+      const results: any[] = [];
+      for (const chatId of chatIds) {
+        for (const photo of photos) {
+          const file = {
+            source: photo.buffer
+          }
+          const result = await this.bot.telegram.sendPhoto(chatId, file);
+          results.push(result);
+        }
+      }
+
+      return {
+        ok: true,
+        from: results[0].from,
+        chat: results[0].chat,
+      };
+    } catch (e) {
+      return {
+        ok: false,
+        error: (e as Error).message,
+      };
+    }
+  }
+
+  async sendPhotoUrlManyToChats(chatIds: string[], photoUrls: string[]): Promise<any> {
+    try {
+      const results: any[] = [];
+      for (const chatId of chatIds) {
+        for (const photo of photoUrls) {
+          const result = await this.bot.telegram.sendPhoto(chatId, photo);
+          results.push(result);
+        }
+      }
+
+      return {
+        ok: true,
+        from: results[0].from,
+        chat: results[0].chat,
+      };
+    } catch (e) {
+      return {
+        ok: false,
+        error: (e as Error).message,
+      };
+    }
+  }
+
   async sendVideoFile(chatId: string, photo: Express.Multer.File): Promise<any> {
     try {
       const file = {

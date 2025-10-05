@@ -75,6 +75,6 @@ export class User {
   @OneToMany(() => Post, (post) => post.user)
   posts: Post[];
 
-  @ManyToMany(() => TelegramChatEntity, (chat) => chat.users)
-  telegramChats: TelegramChatEntity[]
+  // @ManyToMany(() => TelegramChatEntity, (chat) => chat.users)
+  // telegramChats: TelegramChatEntity[]
 }

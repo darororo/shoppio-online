@@ -11,14 +11,10 @@ export class TelegramChatEntity {
 
     @Column()
     title: string;
-
     @Column()
     type: string;
 
 
-    @ManyToMany(() => User, (user) => user.telegramChats)
-    @JoinTable()
-    users: User[]
 
     // @ManyToOne(() => TelegramBotEntity, (bot) => bot.chats)
     // @JoinColumn({ name: 'botId' })
