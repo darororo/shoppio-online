@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { TelegramChatEntity } from './entities/telegram_chat.entity';
 import { Repository } from 'typeorm';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { SendPhotoDto } from './dto/send-photo.dto';
 
 
 @Controller('telegram-bot')
@@ -52,8 +53,9 @@ export class TelegramBotController {
 
   @Post("/send-photo-many-to-chats")
   @UseInterceptors(FilesInterceptor('photos'))
-  async sendPhotoManyToChats(@Body("chatIds") chatIds: string[], @UploadedFiles() photos: Express.Multer.File[]) {
+  async sendPhotoManyToChats(@Body() body: any, @UploadedFiles() photos: Express.Multer.File[]) {
     // if (photoUrls.length > 0) return this.botService.sendPhotoUrlManyToChats(chatIds, photoUrls);
+    const chatIds = Array.isArray(body.chatIds) ? body.chatIds : [body.chatIds];
     return this.botService.sendPhotoFileManyToChats(chatIds, photos);
   }
 
