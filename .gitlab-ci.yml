@@ -11,9 +11,6 @@ notify_telegram:
 
   script:
     - |
-      TELEGRAM_BOT_TOKEN=7558686350:AAEtVlVEobN85MgS7deoLhTeVUhXN61gXRU
-      TELEGRAM_CHAT_ID=-1003091087741
-
       # COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
       # COMMIT_AUTHOR="$GITLAB_USER_NAME"
       REPO_NAME="$CI_PROJECT_TITLE"
