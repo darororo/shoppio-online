@@ -18,6 +18,7 @@ export interface FacebookMessageResponse {
     username?: string;
     id: string;
     name?: string;
+    profile_pic?: string;
   };
   to?: {
     data: Array<{
@@ -30,10 +31,34 @@ export interface FacebookMessageResponse {
   attachments?: {
     data: Array<{
       id: string;
-      mime_type: string;
-      name: string;
-      size: number;
+      mime_type?: string;
+      name?: string;
+      size?: number;
+      image_data?: {
+        url: string;
+        preview_url?: string;
+        width?: number;
+        height?: number;
+      };
+      video_data?: {
+        url: string;
+        preview_url?: string;
+        width?: number;
+        height?: number;
+      };
+      audio_data?: {
+        url: string;
+      };
+      file_url?: string;
     }>;
+  };
+  sticker?: string | {
+    id: string;
+    url: string;
+    pack?: {
+      id: string;
+      name?: string;
+    };
   };
 }
 

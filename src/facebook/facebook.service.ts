@@ -835,7 +835,7 @@ export class FacebookService {
   async fetchMessageDetails(
     messageId: string,
     pageAccessToken: string,
-    fields: string = 'id,created_time,from,to,message',
+    fields: string = 'id,created_time,from,to,message,attachments{id,mime_type,name,size,image_data,video_data,audio_data,file_url},sticker',
   ): Promise<FacebookMessageResponse> {
     try {
       console.log(`💬 Fetching details for message ${messageId}...`);
@@ -857,8 +857,29 @@ export class FacebookService {
       }
 
       const result = (await response.json()) as FacebookMessageResponse;
-      console.log(`💬 Successfully fetched message details for ${messageId}`);
+      
+      // Debug sticker data
+      if (result.sticker) {
+        console.log('🎭 Sticker data received from Facebook API:', {
+          messageId: messageId,
+          sticker: result.sticker
+        });
+      }
+      
+      // Try to fetch user profile picture if this is a user message
+      if (result.from?.id && result.from.id !== 'me') {
+        try {
+          const userProfile = await this.getUserProfile(result.from.id, pageAccessToken, 'profile_pic');
+          if (userProfile?.profile_pic) {
+            result.from.profile_pic = userProfile.profile_pic;
+            console.log(`� Fetched user profile picture for ${result.from.id}`);
+          }
+        } catch (profileError) {
+          console.log(`⚠️ Could not fetch user profile picture for ${result.from.id}:`, profileError.message);
+        }
+      }
 
+      console.log(`�💬 Successfully fetched message details for ${messageId}`);
       return result;
     } catch (error) {
       console.error('❌ Failed to fetch message details:', error);
