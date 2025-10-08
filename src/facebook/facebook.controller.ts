@@ -239,19 +239,21 @@ export class FacebookController {
 
   /**
    * Get all messages in a conversation with detailed information
-   * GET /facebook/conversation/:conversationId/messages?access_token=PAGE_ACCESS_TOKEN&fetch_all=true
+   * GET /facebook/conversation/:conversationId/messages?access_token=PAGE_ACCESS_TOKEN&fetch_all=true&since=ISO_TIMESTAMP
    */
   @Get('conversation/:conversationId/messages')
   async getAllConversationMessages(
     @Param('conversationId') conversationId: string,
     @Query('access_token') accessToken: string,
     @Query('fetch_all') fetchAll: string = 'true',
+    @Query('since') since?: string,
   ) {
     console.log('Debug - Received parameters:', {
       conversationId,
       accessToken: accessToken ? 'PROVIDED' : 'NOT PROVIDED',
       accessTokenLength: accessToken?.length || 0,
-      fetchAll
+      fetchAll,
+      since
     });
 
     if (!conversationId || !accessToken) {
@@ -259,6 +261,6 @@ export class FacebookController {
     }
 
     const shouldFetchAll = fetchAll === 'true';
-    return this.facebookService.fetchAllConversationMessages(conversationId, accessToken, shouldFetchAll);
+    return this.facebookService.fetchAllConversationMessages(conversationId, accessToken, shouldFetchAll, since);
   }
 }

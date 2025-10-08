@@ -894,12 +894,14 @@ export class FacebookService {
    * @param conversationId Conversation ID
    * @param pageAccessToken Page access token with messaging permissions
    * @param fetchAll Whether to fetch all messages (following pagination)
+   * @param since ISO timestamp to fetch messages since this time (optional)
    * @returns All messages in the conversation with details
    */
   async fetchAllConversationMessages(
     conversationId: string,
     pageAccessToken: string,
     fetchAll: boolean = true,
+    since?: string,
   ): Promise<FacebookMessageResponse[]> {
     try {
       console.log(
@@ -979,10 +981,24 @@ export class FacebookService {
         }
       }
 
+      // Filter messages by 'since' parameter if provided
+      let filteredMessages = messagesWithDetails;
+      if (since) {
+        const sinceDate = new Date(since);
+        filteredMessages = messagesWithDetails.filter(msg => {
+          const messageDate = new Date(msg.created_time);
+          return messageDate > sinceDate;
+        });
+        
+        console.log(
+          `🔄 Filtered to ${filteredMessages.length} messages since ${since} (from ${messagesWithDetails.length} total)`,
+        );
+      }
+
       console.log(
-        `💬 Finished fetching message details. Total messages: ${allMessageIds.length}, with details: ${messagesWithDetails.length}`,
+        `💬 Finished fetching message details. Total messages: ${allMessageIds.length}, with details: ${messagesWithDetails.length}, filtered: ${filteredMessages.length}`,
       );
-      return messagesWithDetails;
+      return filteredMessages;
     } catch (error) {
       console.error('❌ Failed to fetch all conversation messages:', error);
       throw new BadRequestException(
