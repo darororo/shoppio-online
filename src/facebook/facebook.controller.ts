@@ -236,4 +236,29 @@ export class FacebookController {
 
     return this.facebookService.getPageConversationsWithProfiles(pageId, accessToken, platform);
   }
+
+  /**
+   * Get all messages in a conversation with detailed information
+   * GET /facebook/conversation/:conversationId/messages?access_token=PAGE_ACCESS_TOKEN&fetch_all=true
+   */
+  @Get('conversation/:conversationId/messages')
+  async getAllConversationMessages(
+    @Param('conversationId') conversationId: string,
+    @Query('access_token') accessToken: string,
+    @Query('fetch_all') fetchAll: string = 'true',
+  ) {
+    console.log('Debug - Received parameters:', {
+      conversationId,
+      accessToken: accessToken ? 'PROVIDED' : 'NOT PROVIDED',
+      accessTokenLength: accessToken?.length || 0,
+      fetchAll
+    });
+
+    if (!conversationId || !accessToken) {
+      throw new BadRequestException('Conversation ID and access_token are required');
+    }
+
+    const shouldFetchAll = fetchAll === 'true';
+    return this.facebookService.fetchAllConversationMessages(conversationId, accessToken, shouldFetchAll);
+  }
 }
