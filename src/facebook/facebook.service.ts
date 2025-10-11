@@ -31,6 +31,56 @@ export interface FacebookUploadResult {
   uploadResponse: FacebookUploadResponse;
 }
 
+export interface FacebookSendMessageResponse {
+  recipient_id: string;
+  message_id: string;
+}
+
+export interface FacebookQuickReply {
+  content_type: 'text' | 'user_phone_number' | 'user_email';
+  title?: string;
+  payload?: string;
+  image_url?: string;
+}
+
+export interface FacebookButton {
+  type: 'web_url' | 'postback' | 'phone_number';
+  title: string;
+  url?: string;
+  payload?: string;
+}
+
+export interface FacebookTemplateElement {
+  title: string;
+  image_url?: string;
+  subtitle?: string;
+  default_action?: {
+    type: 'web_url';
+    url: string;
+    messenger_extensions?: boolean;
+    webview_height_ratio?: 'compact' | 'tall' | 'full';
+  };
+  buttons?: FacebookButton[];
+}
+
+export interface FacebookAttachment {
+  type: 'audio' | 'file' | 'image' | 'template' | 'video';
+  payload: {
+    url?: string;
+    is_reusable?: boolean;
+    // Template-specific payload
+    template_type?: 'generic' | 'button' | 'receipt' | 'media';
+    [key: string]: any;
+  };
+}
+
+export interface FacebookMessage {
+  text?: string; // Must be UTF-8 and less than 2000 characters
+  attachment?: FacebookAttachment;
+  quick_replies?: FacebookQuickReply[];
+  metadata?: string; // Must be less than 1000 characters
+}
+
 @Injectable()
 export class FacebookService {
   private readonly facebookGraphURL = 'https://graph.facebook.com/v23.0';
@@ -1185,6 +1235,314 @@ export class FacebookService {
         psid: psid,
         error: error.message
       };
+    }
+  }
+
+  /**
+   * Send a message using Facebook Messenger Send API
+   * @param recipientId - Page-scoped ID (PSID) of the recipient
+   * @param message - Message content following Facebook's message structure
+   * @param pageAccessToken - Page access token with pages_messaging permission
+   * @param messagingType - Type of message (RESPONSE, UPDATE, MESSAGE_TAG, NON_PROMOTIONAL_SUBSCRIPTION)
+   * @param tag - Message tag for certain messaging types (optional)
+   * @returns Response from Facebook Send API
+   */
+  async sendMessage(
+    recipientId: string,
+    message: FacebookMessage,
+    pageAccessToken: string,
+    messagingType: 'RESPONSE' | 'UPDATE' | 'MESSAGE_TAG' | 'NON_PROMOTIONAL_SUBSCRIPTION' = 'RESPONSE',
+    tag?: string
+  ): Promise<FacebookSendMessageResponse> {
+    try {
+      console.log(`📤 Sending message to recipient ${recipientId}...`);
+
+      // Validate message structure
+      this.validateMessage(message);
+
+      const url = `${this.facebookGraphURL}/me/messages`;
+      
+      const payload: any = {
+        recipient: {
+          id: recipientId
+        },
+        message: message,
+        messaging_type: messagingType
+      };
+
+      // Add tag if provided (required for MESSAGE_TAG type)
+      if (tag) {
+        payload.tag = tag;
+      }
+
+      console.log('📤 Sending payload:', JSON.stringify(payload, null, 2));
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${pageAccessToken}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Facebook Send API error response:', error);
+        throw new Error(
+          error.error?.message || 'Failed to send message',
+        );
+      }
+
+      const result = await response.json() as FacebookSendMessageResponse;
+      console.log(`✅ Successfully sent message. Message ID: ${result.message_id}`);
+
+      return result;
+    } catch (error) {
+      console.error('❌ Failed to send message:', error);
+      throw new BadRequestException(
+        `Failed to send message: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Validate message structure according to Facebook's requirements
+   * @param message - The message object to validate
+   */
+  private validateMessage(message: FacebookMessage): void {
+    // Either text or attachment must be set, but not both
+    const hasText = message.text && message.text.trim().length > 0;
+    const hasAttachment = message.attachment !== null && message.attachment !== undefined;
+
+    if (!hasText && !hasAttachment) {
+      throw new Error('Message must contain either text or attachment');
+    }
+
+    if (hasText && hasAttachment) {
+      throw new Error('Message cannot contain both text and attachment');
+    }
+
+    // Validate text constraints
+    if (hasText) {
+      if (message.text!.length > 2000) {
+        throw new Error('Text message must be less than 2000 characters');
+      }
+      // Check for UTF-8 validity (basic check)
+      try {
+        encodeURIComponent(message.text!);
+      } catch (e) {
+        throw new Error('Text must be valid UTF-8');
+      }
+    }
+
+    // Validate attachment constraints
+    if (hasAttachment) {
+      const validTypes = ['audio', 'file', 'image', 'template', 'video'];
+      if (!validTypes.includes(message.attachment!.type)) {
+        throw new Error(`Attachment type must be one of: ${validTypes.join(', ')}`);
+      }
+
+      if (!message.attachment!.payload) {
+        throw new Error('Attachment must have a payload');
+      }
+    }
+
+    // Validate metadata constraints
+    if (message.metadata && message.metadata.length > 1000) {
+      throw new Error('Metadata must be less than 1000 characters');
+    }
+
+    // Validate quick replies
+    if (message.quick_replies && message.quick_replies.length > 13) {
+      throw new Error('Maximum of 13 quick replies allowed');
+    }
+  }
+
+  /**
+   * Send a text message
+   * @param recipientId - Page-scoped ID (PSID) of the recipient
+   * @param text - Text content of the message
+   * @param pageAccessToken - Page access token
+   * @param quickReplies - Optional quick replies
+   * @returns Response from Facebook Send API
+   */
+  async sendTextMessage(
+    recipientId: string,
+    text: string,
+    pageAccessToken: string,
+    quickReplies?: FacebookQuickReply[]
+  ): Promise<FacebookSendMessageResponse> {
+    const message: FacebookMessage = {
+      text: text
+    };
+
+    if (quickReplies && quickReplies.length > 0) {
+      message.quick_replies = quickReplies;
+    }
+
+    return this.sendMessage(recipientId, message, pageAccessToken);
+  }
+
+  /**
+   * Send an attachment (image, audio, video, or file)
+   * @param recipientId - Page-scoped ID (PSID) of the recipient
+   * @param attachmentType - Type of attachment ('image', 'audio', 'video', 'file')
+   * @param attachmentUrl - URL or file_id of the attachment
+   * @param pageAccessToken - Page access token
+   * @param isReusable - Whether the attachment should be reusable (default: false)
+   * @returns Response from Facebook Send API
+   */
+  async sendAttachment(
+    recipientId: string,
+    attachmentType: 'image' | 'audio' | 'video' | 'file',
+    attachmentUrl: string,
+    pageAccessToken: string,
+    isReusable: boolean = false
+  ): Promise<FacebookSendMessageResponse> {
+    const message: FacebookMessage = {
+      attachment: {
+        type: attachmentType as 'image' | 'audio' | 'video' | 'file',
+        payload: {
+          url: attachmentUrl,
+          is_reusable: isReusable
+        }
+      }
+    };
+
+    return this.sendMessage(recipientId, message, pageAccessToken);
+  }
+
+  /**
+   * Send a template message (generic template, button template, etc.)
+   * @param recipientId - Page-scoped ID (PSID) of the recipient
+   * @param templateType - Type of template ('generic', 'button', 'receipt', 'media')
+   * @param templatePayload - Template-specific payload
+   * @param pageAccessToken - Page access token
+   * @returns Response from Facebook Send API
+   */
+  async sendTemplate(
+    recipientId: string,
+    templateType: 'generic' | 'button' | 'receipt' | 'media',
+    templatePayload: any,
+    pageAccessToken: string
+  ): Promise<FacebookSendMessageResponse> {
+    const message: FacebookMessage = {
+      attachment: {
+        type: 'template' as const,
+        payload: {
+          template_type: templateType,
+          ...templatePayload
+        }
+      }
+    };
+
+    return this.sendMessage(recipientId, message, pageAccessToken);
+  }
+
+  /**
+   * Send a generic template with cards
+   * @param recipientId - Page-scoped ID (PSID) of the recipient
+   * @param elements - Array of card elements
+   * @param pageAccessToken - Page access token
+   * @returns Response from Facebook Send API
+   */
+  async sendGenericTemplate(
+    recipientId: string,
+    elements: Array<{
+      title: string;
+      image_url?: string;
+      subtitle?: string;
+      default_action?: {
+        type: 'web_url';
+        url: string;
+        messenger_extensions?: boolean;
+        webview_height_ratio?: 'compact' | 'tall' | 'full';
+      };
+      buttons?: Array<{
+        type: 'web_url' | 'postback' | 'phone_number';
+        title: string;
+        url?: string;
+        payload?: string;
+      }>;
+    }>,
+    pageAccessToken: string
+  ): Promise<FacebookSendMessageResponse> {
+    return this.sendTemplate(recipientId, 'generic', { elements }, pageAccessToken);
+  }
+
+  /**
+   * Send a button template
+   * @param recipientId - Page-scoped ID (PSID) of the recipient
+   * @param text - Text to display above buttons
+   * @param buttons - Array of buttons
+   * @param pageAccessToken - Page access token
+   * @returns Response from Facebook Send API
+   */
+  async sendButtonTemplate(
+    recipientId: string,
+    text: string,
+    buttons: Array<{
+      type: 'web_url' | 'postback' | 'phone_number';
+      title: string;
+      url?: string;
+      payload?: string;
+    }>,
+    pageAccessToken: string
+  ): Promise<FacebookSendMessageResponse> {
+    return this.sendTemplate(recipientId, 'button', { text, buttons }, pageAccessToken);
+  }
+
+  /**
+   * Send typing indicators
+   * @param recipientId - Page-scoped ID (PSID) of the recipient
+   * @param action - Sender action ('typing_on', 'typing_off', 'mark_seen')
+   * @param pageAccessToken - Page access token
+   * @returns Response from Facebook Send API
+   */
+  async sendSenderAction(
+    recipientId: string,
+    action: 'typing_on' | 'typing_off' | 'mark_seen',
+    pageAccessToken: string
+  ): Promise<{ recipient_id: string }> {
+    try {
+      console.log(`📤 Sending sender action '${action}' to recipient ${recipientId}...`);
+
+      const url = `${this.facebookGraphURL}/me/messages`;
+      
+      const payload = {
+        recipient: {
+          id: recipientId
+        },
+        sender_action: action
+      };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${pageAccessToken}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Facebook Send API error response:', error);
+        throw new Error(
+          error.error?.message || 'Failed to send sender action',
+        );
+      }
+
+      const result = await response.json();
+      console.log(`✅ Successfully sent sender action '${action}'`);
+
+      return result;
+    } catch (error) {
+      console.error('❌ Failed to send sender action:', error);
+      throw new BadRequestException(
+        `Failed to send sender action: ${error.message}`,
+      );
     }
   }
 

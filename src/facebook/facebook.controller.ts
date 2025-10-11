@@ -263,4 +263,170 @@ export class FacebookController {
     const shouldFetchAll = fetchAll === 'true';
     return this.facebookService.fetchAllConversationMessages(conversationId, accessToken, shouldFetchAll, since);
   }
+
+  // === MESSENGER SEND API ENDPOINTS ===
+
+  /**
+   * Send a text message to a user
+   * POST /facebook/send/text
+   */
+  @Post('send/text')
+  async sendTextMessage(
+    @Body() messageData: {
+      recipientId: string;
+      text: string;
+      pageAccessToken: string;
+      quickReplies?: Array<{
+        content_type: 'text' | 'user_phone_number' | 'user_email';
+        title?: string;
+        payload?: string;
+        image_url?: string;
+      }>;
+    },
+  ) {
+    const { recipientId, text, pageAccessToken, quickReplies } = messageData;
+
+    if (!recipientId || !text || !pageAccessToken) {
+      throw new BadRequestException('recipientId, text, and pageAccessToken are required');
+    }
+
+    return this.facebookService.sendTextMessage(recipientId, text, pageAccessToken, quickReplies);
+  }
+
+  /**
+   * Send an attachment (image, audio, video, or file)
+   * POST /facebook/send/attachment
+   */
+  @Post('send/attachment')
+  async sendAttachment(
+    @Body() attachmentData: {
+      recipientId: string;
+      attachmentType: 'image' | 'audio' | 'video' | 'file';
+      attachmentUrl: string;
+      pageAccessToken: string;
+      isReusable?: boolean;
+    },
+  ) {
+    const { recipientId, attachmentType, attachmentUrl, pageAccessToken, isReusable = false } = attachmentData;
+
+    if (!recipientId || !attachmentType || !attachmentUrl || !pageAccessToken) {
+      throw new BadRequestException('recipientId, attachmentType, attachmentUrl, and pageAccessToken are required');
+    }
+
+    return this.facebookService.sendAttachment(recipientId, attachmentType, attachmentUrl, pageAccessToken, isReusable);
+  }
+
+  /**
+   * Send a generic template with cards
+   * POST /facebook/send/template/generic
+   */
+  @Post('send/template/generic')
+  async sendGenericTemplate(
+    @Body() templateData: {
+      recipientId: string;
+      elements: Array<{
+        title: string;
+        image_url?: string;
+        subtitle?: string;
+        default_action?: {
+          type: 'web_url';
+          url: string;
+          messenger_extensions?: boolean;
+          webview_height_ratio?: 'compact' | 'tall' | 'full';
+        };
+        buttons?: Array<{
+          type: 'web_url' | 'postback' | 'phone_number';
+          title: string;
+          url?: string;
+          payload?: string;
+        }>;
+      }>;
+      pageAccessToken: string;
+    },
+  ) {
+    const { recipientId, elements, pageAccessToken } = templateData;
+
+    if (!recipientId || !elements || !pageAccessToken) {
+      throw new BadRequestException('recipientId, elements, and pageAccessToken are required');
+    }
+
+    return this.facebookService.sendGenericTemplate(recipientId, elements, pageAccessToken);
+  }
+
+  /**
+   * Send a button template
+   * POST /facebook/send/template/button
+   */
+  @Post('send/template/button')
+  async sendButtonTemplate(
+    @Body() templateData: {
+      recipientId: string;
+      text: string;
+      buttons: Array<{
+        type: 'web_url' | 'postback' | 'phone_number';
+        title: string;
+        url?: string;
+        payload?: string;
+      }>;
+      pageAccessToken: string;
+    },
+  ) {
+    const { recipientId, text, buttons, pageAccessToken } = templateData;
+
+    if (!recipientId || !text || !buttons || !pageAccessToken) {
+      throw new BadRequestException('recipientId, text, buttons, and pageAccessToken are required');
+    }
+
+    return this.facebookService.sendButtonTemplate(recipientId, text, buttons, pageAccessToken);
+  }
+
+  /**
+   * Send typing indicators or mark as seen
+   * POST /facebook/send/action
+   */
+  @Post('send/action')
+  async sendSenderAction(
+    @Body() actionData: {
+      recipientId: string;
+      action: 'typing_on' | 'typing_off' | 'mark_seen';
+      pageAccessToken: string;
+    },
+  ) {
+    const { recipientId, action, pageAccessToken } = actionData;
+
+    if (!recipientId || !action || !pageAccessToken) {
+      throw new BadRequestException('recipientId, action, and pageAccessToken are required');
+    }
+
+    return this.facebookService.sendSenderAction(recipientId, action, pageAccessToken);
+  }
+
+  /**
+   * Send a custom message (full control over message structure)
+   * POST /facebook/send/message
+   */
+  @Post('send/message')
+  async sendMessage(
+    @Body() messageData: {
+      recipientId: string;
+      message: any;
+      pageAccessToken: string;
+      messagingType?: 'RESPONSE' | 'UPDATE' | 'MESSAGE_TAG' | 'NON_PROMOTIONAL_SUBSCRIPTION';
+      tag?: string;
+    },
+  ) {
+    const { 
+      recipientId, 
+      message, 
+      pageAccessToken, 
+      messagingType = 'RESPONSE',
+      tag 
+    } = messageData;
+
+    if (!recipientId || !message || !pageAccessToken) {
+      throw new BadRequestException('recipientId, message, and pageAccessToken are required');
+    }
+
+    return this.facebookService.sendMessage(recipientId, message, pageAccessToken, messagingType, tag);
+  }
 }
