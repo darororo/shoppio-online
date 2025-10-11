@@ -1,4 +1,4 @@
-import { PostDistribution } from "src/post_distributions/entities/post_distribution.entity";
+// import { PostDistribution } from "src/post_distributions/entities/post_distribution.entity";
 import { User } from "src/users/entities/user.entity";
 import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
@@ -25,6 +25,6 @@ export class Post { // posts created by user to be scheduled and distributed to 
  @UpdateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
  updated_at: Date;
 
- @OneToMany(()=> PostDistribution,(pd)=> pd.post)
- distributions: PostDistribution[];
+//  @OneToMany(()=> PostDistribution,(pd)=> pd.post)
+//  distributions: PostDistribution[];
 }

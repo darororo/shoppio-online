@@ -7,7 +7,7 @@ import { Order } from 'src/orders/entities/order.entity';
 // import { Message } from 'src/messages/entities/message.entity';
 // import { Order } from 'src/orders/entities/order.entity';
 // import { Page } from 'src/pages/entities/page.entity';
-import { PostDistribution } from 'src/post_distributions/entities/post_distribution.entity';
+// import { PostDistribution } from 'src/post_distributions/entities/post_distribution.entity';
 import { Post } from 'src/posts/entities/post.entity';
 import { SocialAccount } from 'src/social_account/entities/social_account.entity';
 import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
@@ -59,7 +59,6 @@ export function getDatabaseConfig(): TypeOrmModuleOptions {
       SocialMessage,
       SocialPage,
       AnalyzedMessage,
-      PostDistribution,
       Buyer,
       Order,
       TelegramChatEntity,

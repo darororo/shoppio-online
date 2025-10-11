@@ -1,4 +1,4 @@
-import { PostDistribution } from 'src/post_distributions/entities/post_distribution.entity';
+// import { PostDistribution } from 'src/post_distributions/entities/post_distribution.entity';
 import { SocialAccount } from 'src/social_account/entities/social_account.entity';
 import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
 import {
@@ -45,11 +45,11 @@ export class SocialPage {
   @UpdateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
   updated_at: Date;
 
-  @OneToMany(
-    () => PostDistribution,
-    (postDistributions) => postDistributions.socialPage,
-  )
-  postDistributions: PostDistribution[];
+  // @OneToMany(
+  //   () => PostDistribution,
+  //   (postDistributions) => postDistributions.socialPage,
+  // )
+  // postDistributions: PostDistribution[];
 
   @OneToMany(() => SocialMessage, (socialMessage) => socialMessage.socialPage)
   messages: SocialMessage[];
