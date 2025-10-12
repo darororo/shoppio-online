@@ -1,4 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import {
   FacebookCommentResponse,
   FacebookCommentsListResponse,
@@ -10,6 +12,11 @@ import {
   FacebookMessageResponse,
   FacebookMessagesListResponse,
 } from './dto/facebook-conversation.dto';
+import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
+import { SocialPage } from 'src/social_pages/entities/social_page.entity';
+import { Post } from 'src/posts/entities/post.entity';
+import { CreateSocialMessageFromCommentDto } from 'src/social_messages/dto/create-social-message-from-comment.dto';
+import { MessageType } from 'src/social_messages/enum/message_type';
 
 export interface FacebookUploadSessionResponse {
   id: string;
@@ -84,6 +91,15 @@ export interface FacebookMessage {
 @Injectable()
 export class FacebookService {
   private readonly facebookGraphURL = 'https://graph.facebook.com/v23.0';
+
+  constructor(
+    @InjectRepository(SocialMessage)
+    private socialMessageRepository: Repository<SocialMessage>,
+    @InjectRepository(SocialPage)
+    private socialPageRepository: Repository<SocialPage>,
+    @InjectRepository(Post)
+    private postRepository: Repository<Post>,
+  ) {}
 
   /**
    * Upload file to Facebook using Resumable Upload API
@@ -1633,5 +1649,248 @@ export class FacebookService {
         `Failed to fetch conversations with profiles: ${error.message}`,
       );
     }
+  }
+
+  // ======================== SOCIAL MESSAGES METHODS ========================
+
+  /**
+   * Create a social message from Facebook comment data
+   */
+  async createFromFacebookComment(
+    dto: CreateSocialMessageFromCommentDto,
+  ): Promise<SocialMessage> {
+    // Find the social page
+    const socialPage = await this.socialPageRepository.findOne({
+      where: { id: dto.social_page_id },
+    });
+
+    if (!socialPage) {
+      throw new Error(`Social page with ID ${dto.social_page_id} not found`);
+    }
+
+    // Find the post if post_id is provided
+    let post: Post | null = null;
+    if (dto.post_id) {
+      post = await this.postRepository.findOne({
+        where: { id: dto.post_id },
+      });
+    }
+
+    // Create the social message
+    const socialMessage = this.socialMessageRepository.create({
+      socialPage,
+      post: post || undefined,
+      sender_id: dto.sender_id,
+      sender_name: dto.sender_name,
+      facebook_comment_id: dto.facebook_comment_id,
+      facebook_post_id: dto.facebook_post_id,
+      parent_comment_id: dto.parent_comment_id,
+      message_text: dto.message_text,
+      message_type: MessageType.COMMENT,
+      received_at: new Date(),
+    });
+
+    return await this.socialMessageRepository.save(socialMessage);
+  }
+
+  /**
+   * Bulk save Facebook comments as social messages
+   */
+  async saveFacebookComments(
+    comments: FacebookCommentResponse[],
+    socialPageId: string,
+    facebookPostId: string,
+    postId?: string,
+  ): Promise<SocialMessage[]> {
+    const savedMessages: SocialMessage[] = [];
+
+    console.log('COMMENTS TO SAVE');
+    console.log(comments);
+
+    for (const comment of comments) {
+      try {
+        // Check if comment already exists
+        const existingMessage = await this.socialMessageRepository.findOne({
+          where: { facebook_comment_id: comment.id },
+        });
+
+        if (existingMessage) {
+          console.log(`Comment ${comment.id} already exists, skipping...`);
+          continue;
+        }
+
+        const dto: CreateSocialMessageFromCommentDto = {
+          facebook_comment_id: comment.id,
+          facebook_post_id: facebookPostId,
+          message_text: comment.message || '',
+          sender_id: comment.from?.id || '',
+          sender_name: comment.from?.name || '',
+          parent_comment_id: comment.parent?.id,
+          social_page_id: socialPageId,
+          post_id: postId,
+        };
+
+        const savedMessage = await this.createFromFacebookComment(dto);
+        savedMessages.push(savedMessage);
+
+        console.log(`💾 Saved comment ${comment.id} to database`);
+      } catch (error) {
+        console.error(
+          `❌ Failed to save comment ${comment.id}:`,
+          error.message,
+        );
+        // Continue with other comments even if one fails
+      }
+    }
+
+    return savedMessages;
+  }
+
+  /**
+   * Find comments by Facebook post ID
+   */
+  async findCommentsByFacebookPostId(
+    facebookPostId: string,
+  ): Promise<SocialMessage[]> {
+    return await this.socialMessageRepository.find({
+      where: {
+        facebook_post_id: facebookPostId,
+        message_type: MessageType.COMMENT,
+      },
+      relations: ['socialPage', 'post', 'buyer'],
+      order: { received_at: 'DESC' },
+    });
+  }
+
+  /**
+   * Find comments by social page
+   */
+  async findCommentsBySocialPage(
+    socialPageId: string,
+  ): Promise<SocialMessage[]> {
+    return await this.socialMessageRepository.find({
+      where: {
+        socialPage: { id: socialPageId },
+        message_type: MessageType.COMMENT,
+      },
+      relations: ['socialPage', 'post', 'buyer'],
+      order: { received_at: 'DESC' },
+    });
+  }
+
+  /**
+   * Find comment by Facebook comment ID
+   */
+  async findByFacebookCommentId(
+    facebookCommentId: string,
+  ): Promise<SocialMessage | null> {
+    return await this.socialMessageRepository.findOne({
+      where: { facebook_comment_id: facebookCommentId },
+      relations: ['socialPage', 'post', 'buyer'],
+    });
+  }
+
+  /**
+   * Helper method: Create a social page for testing
+   */
+  async createSocialPage(data: {
+    page_id: string;
+    page_name: string;
+    access_token?: string;
+  }): Promise<SocialPage> {
+    const socialPage = this.socialPageRepository.create({
+      page_id: data.page_id,
+      page_name: data.page_name,
+      access_token: data.access_token,
+    });
+
+    return await this.socialPageRepository.save(socialPage);
+  }
+
+  /**
+   * Find a social page by its UUID
+   */
+  async findSocialPageByUuid(uuid: string): Promise<SocialPage | null> {
+    return await this.socialPageRepository.findOne({
+      where: { id: uuid },
+    });
+  }
+
+  /**
+   * Find all comments with pagination
+   */
+  async findAllCommentsWithPagination(
+    skip: number,
+    limit: number,
+  ): Promise<[SocialMessage[], number]> {
+    return await this.socialMessageRepository.findAndCount({
+      skip,
+      take: limit,
+      relations: ['socialPage', 'post', 'buyer'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  /**
+   * Find comments by social page ID
+   */
+  async findCommentsBySocialPageId(
+    socialPageId: string,
+  ): Promise<SocialMessage[]> {
+    return await this.socialMessageRepository.find({
+      where: { socialPage: { id: socialPageId } },
+      relations: ['socialPage', 'post', 'buyer'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  async markAsProcessed(id: string) {
+    await this.socialMessageRepository.update(id, { is_processed: true });
+  }
+
+  async findUnprocessed() {
+    const messages = await this.socialMessageRepository.find({
+      where: { is_processed: false },
+      relations: ['buyer'],
+      order: { created_at: 'ASC' }, // optional: keep chronological order
+    });
+
+    const grouped = Object.values(
+      messages.reduce(
+        (acc, msg) => {
+          const postId = String(msg.facebook_post_id || 'unknown_post');
+
+          if (!acc[postId]) {
+            acc[postId] = {
+              post_id: postId,
+              messages: [],
+            };
+          }
+
+          acc[postId].messages.push({
+            id: msg.id,
+            buyer_id: String(msg.buyer?.id || '0'),
+            buyer: msg.buyer?.name || 'Unknown Buyer',
+            message_text: msg.message_text,
+          });
+
+          return acc;
+        },
+        {} as Record<
+          string,
+          {
+            post_id: string;
+            messages: {
+              id: string;
+              buyer_id: string;
+              buyer: string;
+              message_text: string;
+            }[];
+          }
+        >,
+      ),
+    );
+
+    return grouped;
   }
 }

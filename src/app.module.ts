@@ -16,7 +16,6 @@ import { getDatabaseConfig } from './database/database.provider';
 import { SocialPagesModule } from './social_pages/social_pages.module';
 // import { PostsModule } from './posts/posts.module';
 // import { PostDistributionsModule } from './post_distributions/post_distributions.module';
-import { SocialMessagesModule } from './social_messages/social_messages.module';
 import { CommonModule } from './common/common.module';
 import { GeminiService } from './analyzer/gemini.service';
 import { AnalyzerService } from './analyzer/analyzer.service';
@@ -41,7 +40,6 @@ import { UnhandledExceptionLogger } from './common/unhandled-exception.logger';
     TypeOrmModule.forRoot(getDatabaseConfig()),
     AuthModule,
     FacebookModule,
-    SocialMessagesModule,
     AnalyzerModule,
 
     // Telegram bots

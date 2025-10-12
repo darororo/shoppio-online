@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AnalyzerController } from './analyzer.controller';
-import { SocialMessagesModule } from 'src/social_messages/social_messages.module';
+import { FacebookModule } from 'src/facebook/facebook.module';
 import { AnalyzedMessagesModule } from 'src/analyzed_messages/analyzed_messages.module';
 import { ConfigModule } from '@nestjs/config';
 import { AnalyzerService } from './analyzer.service';
@@ -9,7 +9,7 @@ import { OrdersModule } from 'src/orders/orders.module';
 
 @Module({
   imports: [
-    SocialMessagesModule,
+    FacebookModule,
     AnalyzedMessagesModule,
     OrdersModule,
     ConfigModule,

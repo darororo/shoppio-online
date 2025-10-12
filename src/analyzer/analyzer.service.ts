@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { SocialMessagesService } from 'src/social_messages/social_messages.service';
+import { FacebookService } from 'src/facebook/facebook.service';
 import { AnalyzedMessagesService } from 'src/analyzed_messages/analyzed_messages.service';
 import { IntentionEnum } from 'src/analyzed_messages/enum/intention_enum';
 import { CreateAnalyzedMessageDto } from 'src/analyzed_messages/dto/create-analyzed_message.dto';
@@ -12,7 +12,7 @@ export class AnalyzerService {
   private readonly logger = new Logger(AnalyzerService.name);
 
   constructor(
-    private readonly socialMessageService: SocialMessagesService,
+    private readonly facebookService: FacebookService,
     private readonly analyzedDataService: AnalyzedMessagesService,
     private readonly orderService: OrdersService,
     private readonly geminiService: GeminiService,
@@ -24,7 +24,7 @@ export class AnalyzerService {
   }> {
     this.logger.log('Starting analysis of unprocessed raw data...');
 
-    const unprocessedData = await this.socialMessageService.findUnprocessed();
+    const unprocessedData = await this.facebookService.findUnprocessed();
     // const unpresscessedMessages = unprocessedData;
     // const messageIds = unprocessedData.messageIds;
 
@@ -114,7 +114,7 @@ export class AnalyzerService {
           await this.orderService.create(createOrderDto);
 
           // Mark this single message as processed
-          await this.socialMessageService.markAsProcessed(msg.id);
+          await this.facebookService.markAsProcessed(msg.id);
           processed++;
         } catch (error) {
           this.logger.error(
