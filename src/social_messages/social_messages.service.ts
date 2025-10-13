@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SocialMessage } from './entities/social_message.entity';
 import { SocialPage } from 'src/social_pages/entities/social_page.entity';
-import { Post } from 'src/posts/entities/post.entity';
+// import { Post } from 'src/posts/entities/post.entity';
 import { CreateSocialMessageDto } from './dto/create-social_message.dto';
 import { UpdateSocialMessageDto } from './dto/update-social_message.dto';
 import { CreateSocialMessageFromCommentDto } from './dto/create-social-message-from-comment.dto';
@@ -17,8 +17,8 @@ export class SocialMessagesService {
     private socialMessageRepository: Repository<SocialMessage>,
     @InjectRepository(SocialPage)
     private socialPageRepository: Repository<SocialPage>,
-    @InjectRepository(Post)
-    private postRepository: Repository<Post>,
+    // @InjectRepository(Post)
+    // private postRepository: Repository<Post>,
   ) {}
 
   create(createSocialMessageDto: CreateSocialMessageDto) {
@@ -57,17 +57,17 @@ export class SocialMessagesService {
     }
 
     // Find the post if post_id is provided
-    let post: Post | null = null;
-    if (dto.post_id) {
-      post = await this.postRepository.findOne({
-        where: { id: dto.post_id },
-      });
-    }
+    // let post: Post | null = null;
+    // if (dto.post_id) {
+    //   post = await this.postRepository.findOne({
+    //     where: { id: dto.post_id },
+    //   });
+    // }
 
     // Create the social message
     const socialMessage = this.socialMessageRepository.create({
       socialPage,
-      post: post || undefined,
+      // post: post || undefined,
       sender_id: dto.sender_id,
       sender_name: dto.sender_name,
       facebook_comment_id: dto.facebook_comment_id,
@@ -247,7 +247,7 @@ export class SocialMessagesService {
 
     const messageData = messages.map((message) => ({
       id: message.id,
-      post_id: message.post?.id || null,
+      // post_id: message.post?.id || null,
       buyer_id: message.buyer?.id || null,
       buyer: message.buyer?.name || 'Unknown Buyer',
       message_text: message.message_text,

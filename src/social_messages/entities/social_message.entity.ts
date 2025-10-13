@@ -1,6 +1,6 @@
 import { AnalyzedMessage } from 'src/analyzed_messages/entities/analyzed_message.entity';
 import { Buyer } from 'src/buyers/entities/buyer.entity';
-import { Post } from 'src/posts/entities/post.entity';
+// import { Post } from 'src/posts/entities/post.entity';
 import { SocialPage } from 'src/social_pages/entities/social_page.entity';
 import {
   Column,
@@ -22,8 +22,8 @@ export class SocialMessage {
   })
   socialPage: SocialPage;
 
-  @ManyToOne(() => Post, { onDelete: 'SET NULL', nullable: true })
-  post: Post;
+  // @ManyToOne(() => Post, { onDelete: 'SET NULL', nullable: true })
+  // post: Post;
 
   @OneToMany(
     () => AnalyzedMessage,

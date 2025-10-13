@@ -1,8 +1,8 @@
 // import { Post } from '@nestjs/common';
 // import { UpdateBuyerDto } from 'src/buyers/dto/update-buyer.dto';
 // import { Page } from 'src/pages/entities/page.entity';
-import { Post } from 'src/posts/entities/post.entity';
-import { SocialAccount } from 'src/social_account/entities/social_account.entity';
+// import { Post } from 'src/posts/entities/post.entity';
+// import { SocialAccount } from 'src/social_account/entities/social_account.entity';
 import { EncryptionUtil } from 'src/common/utils/encryption.util';
 import {
   Column,
@@ -38,8 +38,8 @@ export class User {
     type: 'text',
     nullable: true,
     transformer: {
-      to: (value: string) => value ? EncryptionUtil.encrypt(value) : null,
-      from: (value: string) => value ? EncryptionUtil.decrypt(value) : null,
+      to: (value: string) => (value ? EncryptionUtil.encrypt(value) : null),
+      from: (value: string) => (value ? EncryptionUtil.decrypt(value) : null),
     },
   })
   accessToken: string;
@@ -47,7 +47,7 @@ export class User {
   @Column({
     type: 'enum',
     enum: UserRole,
-    default: UserRole.USER
+    default: UserRole.USER,
   })
   role: UserRole;
 
@@ -63,17 +63,10 @@ export class User {
   @UpdateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
   updatedAt: Date;
 
-
   @Column({ type: 'timestamp', nullable: true })
   lastLoginAt: Date;
 
-  @OneToMany(() => SocialAccount, (socialAccount) => socialAccount.user, {
-    cascade: true,
-  })
-  socialAccount: SocialAccount[];
-
-  @OneToMany(() => Post, (post) => post.user)
-  posts: Post[];
+  // socialAccount: SocialAccount[];
 
   // @ManyToMany(() => TelegramChatEntity, (chat) => chat.users)
   // telegramChats: TelegramChatEntity[]

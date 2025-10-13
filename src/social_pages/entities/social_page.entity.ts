@@ -1,5 +1,5 @@
 // import { PostDistribution } from 'src/post_distributions/entities/post_distribution.entity';
-import { SocialAccount } from 'src/social_account/entities/social_account.entity';
+// import { SocialAccount } from 'src/social_account/entities/social_account.entity';
 import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
 import {
   Column,
@@ -13,19 +13,19 @@ import {
 } from 'typeorm';
 
 @Entity('social_pages')
-@Unique(['socialAccount', 'page_id'])
+// @Unique(['socialAccount', 'page_id'])
 export class SocialPage {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(
-    () => SocialAccount,
-    (social_account) => social_account.socialPages,
-    {
-    onDelete: 'CASCADE',
-    },
-  )
-  socialAccount: SocialAccount;
+  // @ManyToOne(
+  //   () => SocialAccount,
+  //   (social_account) => social_account.socialPages,
+  //   {
+  //   onDelete: 'CASCADE',
+  //   },
+  // )
+  // socialAccount: SocialAccount;
 
   @Column({ type: 'varchar'})
   page_id: string;

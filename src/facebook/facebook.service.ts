@@ -14,7 +14,7 @@ import {
 } from './dto/facebook-conversation.dto';
 import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
 import { SocialPage } from 'src/social_pages/entities/social_page.entity';
-import { Post } from 'src/posts/entities/post.entity';
+// import { Post } from 'src/posts/entities/post.entity';
 import { CreateSocialMessageFromCommentDto } from 'src/social_messages/dto/create-social-message-from-comment.dto';
 import { MessageType } from 'src/social_messages/enum/message_type';
 
@@ -97,8 +97,8 @@ export class FacebookService {
     private socialMessageRepository: Repository<SocialMessage>,
     @InjectRepository(SocialPage)
     private socialPageRepository: Repository<SocialPage>,
-    @InjectRepository(Post)
-    private postRepository: Repository<Post>,
+    // @InjectRepository(Post)
+    // private postRepository: Repository<Post>,
   ) {}
 
   /**
@@ -1669,17 +1669,17 @@ export class FacebookService {
     }
 
     // Find the post if post_id is provided
-    let post: Post | null = null;
-    if (dto.post_id) {
-      post = await this.postRepository.findOne({
-        where: { id: dto.post_id },
-      });
-    }
+    // let post: Post | null = null;
+    // if (dto.post_id) {
+    //   post = await this.postRepository.findOne({
+    //     where: { id: dto.post_id },
+    //   });
+    // }
 
     // Create the social message
     const socialMessage = this.socialMessageRepository.create({
       socialPage,
-      post: post || undefined,
+      // post: post || undefined,
       sender_id: dto.sender_id,
       sender_name: dto.sender_name,
       facebook_comment_id: dto.facebook_comment_id,

@@ -8,8 +8,8 @@ import { Order } from 'src/orders/entities/order.entity';
 // import { Order } from 'src/orders/entities/order.entity';
 // import { Page } from 'src/pages/entities/page.entity';
 // import { PostDistribution } from 'src/post_distributions/entities/post_distribution.entity';
-import { Post } from 'src/posts/entities/post.entity';
-import { SocialAccount } from 'src/social_account/entities/social_account.entity';
+// import { Post } from 'src/posts/entities/post.entity';
+// import { SocialAccount } from 'src/social_account/entities/social_account.entity';
 import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
 import { SocialPage } from 'src/social_pages/entities/social_page.entity';
 import { TelegramBotEntity } from 'src/telegram_bot/entities/telegram_bot.entity';
@@ -54,8 +54,6 @@ export function getDatabaseConfig(): TypeOrmModuleOptions {
     database,
     entities: [
       User,
-      Post,
-      SocialAccount,
       SocialMessage,
       SocialPage,
       AnalyzedMessage,

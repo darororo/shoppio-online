@@ -76,10 +76,10 @@ export class SocialPagesController {
           page_id: page.page_id, // Facebook page ID
           page_name: page.page_name,
           created_at: page.created_at,
-          socialAccount: page.socialAccount ? {
-            id: page.socialAccount.id,
-            provider: page.socialAccount.provider
-          } : null
+          // socialAccount: page.socialAccount ? {
+          //   id: page.socialAccount.id,
+          //   provider: page.socialAccount.provider
+          // } : null
         }))
       };
     } catch (error) {
@@ -111,10 +111,10 @@ export class SocialPagesController {
           page_id: socialPage.page_id,
           page_name: socialPage.page_name,
           created_at: socialPage.created_at,
-          socialAccount: socialPage.socialAccount ? {
-            id: socialPage.socialAccount.id,
-            provider: socialPage.socialAccount.provider
-          } : null
+          // socialAccount: socialPage.socialAccount ? {
+          //   id: socialPage.socialAccount.id,
+          //   provider: socialPage.socialAccount.provider
+          // } : null
         }
       };
     } catch (error) {
