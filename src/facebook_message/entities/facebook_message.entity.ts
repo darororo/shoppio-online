@@ -1,0 +1,52 @@
+import { User } from 'src/users/entities/user.entity';
+import {
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+
+@Entity()
+export class FbMessage {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ nullable: false, unique: true })
+  facebookMessageId: string;
+
+  // @Column({ nullable: false })
+  // userId: string;
+
+  @ManyToOne(() => User, (user) => user.fbMessages)
+  user: User;
+
+  @Column({ nullable: false })
+  conversationId: string;
+
+  @Column({ type: 'text', nullable: false })
+  message: string;
+
+  @Column({ type: 'jsonb', nullable: false })
+  from: {
+    name: string;
+    id: string;
+    profile_pic?: string;
+  };
+
+  @Column({ type: 'jsonb', nullable: false })
+  to: {
+    data: {
+      name: string;
+      id: string;
+    }[];
+  };
+
+  @CreateDateColumn()
+  create_at: Date;
+
+  @UpdateDateColumn()
+  update_at: Date;
+}

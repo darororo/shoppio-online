@@ -727,4 +727,175 @@ export class FacebookController {
   async findUnprocessed() {
     return this.facebookService.findUnprocessed();
   }
+
+  /**
+   * Fetch and save all messages for a Facebook page
+   */
+  @Post('fetch-and-save-page-messages')
+  async fetchAndSavePageMessages(
+    @Body() requestData: {
+      pageId: string;
+      pageAccessToken: string;
+      platform?: 'messenger' | 'instagram';
+      userId?: string;
+      since?: string;
+    },
+  ) {
+    try {
+      const {
+        pageId,
+        pageAccessToken,
+        platform = 'messenger',
+        userId,
+        since,
+      } = requestData;
+
+      if (!pageId || !pageAccessToken) {
+        throw new BadRequestException('pageId and pageAccessToken are required');
+      }
+
+      const savedMessages = await this.facebookService.fetchAndSaveAllPageMessages(
+        pageId,
+        pageAccessToken,
+        platform,
+        userId,
+        since,
+      );
+
+      const totalSaved = Object.values(savedMessages).reduce(
+        (sum, messages) => sum + messages.length,
+        0,
+      );
+
+      return {
+        success: true,
+        data: {
+          pageId,
+          platform,
+          conversationsProcessed: Object.keys(savedMessages).length,
+          totalMessagesSaved: totalSaved,
+          messagesByConversation: Object.keys(savedMessages).reduce((acc, conversationId) => {
+            acc[conversationId] = savedMessages[conversationId].length;
+            return acc;
+          }, {} as { [key: string]: number }),
+          since,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to fetch and save page messages: ${error.message}`,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Fetch and save messages for a specific conversation
+   */
+  @Post('fetch-and-save-conversation-messages')
+  async fetchAndSaveConversationMessages(
+    @Body() requestData: {
+      conversationId: string;
+      pageAccessToken: string;
+      userId?: string;
+      since?: string;
+    },
+  ) {
+    try {
+      const { conversationId, pageAccessToken, userId, since } = requestData;
+
+      if (!conversationId || !pageAccessToken) {
+        throw new BadRequestException('conversationId and pageAccessToken are required');
+      }
+
+      const savedMessages = await this.facebookService.fetchAndSaveConversationMessages(
+        conversationId,
+        pageAccessToken,
+        userId,
+        since,
+      );
+
+      return {
+        success: true,
+        data: {
+          conversationId,
+          messagesSaved: savedMessages.length,
+          messages: savedMessages.map((msg) => ({
+            id: msg.id,
+            message: msg.message,
+            from: msg.from,
+            created_at: msg.create_at,
+          })),
+          since,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to fetch and save conversation messages: ${error.message}`,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Get saved messages from database
+   */
+  @Get('saved-messages/:conversationId')
+  async getSavedMessages(
+    @Param('conversationId') conversationId: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    try {
+      const result = await this.facebookService.getSavedMessagesByConversation(
+        conversationId,
+        limit ? parseInt(limit.toString()) : 50,
+        offset ? parseInt(offset.toString()) : 0,
+      );
+
+      return {
+        success: true,
+        data: {
+          conversationId,
+          total: result.total,
+          messages: result.messages.map((msg) => ({
+            id: msg.id,
+            message: msg.message,
+            from: msg.from,
+            to: msg.to,
+            created_at: msg.create_at,
+            user: msg.user ? { id: msg.user.id } : null,
+          })),
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to get saved messages: ${error.message}`,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Debug endpoint to see all conversation IDs in database
+   */
+  @Get('debug/conversation-ids')
+  async getDebugConversationIds() {
+    try {
+      const result = await this.facebookService.getDebugConversationInfo();
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to get debug info: ${error.message}`,
+        error: error.message,
+      };
+    }
+  }
 }

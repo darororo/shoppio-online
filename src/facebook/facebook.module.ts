@@ -4,11 +4,12 @@ import { FacebookController } from './facebook.controller';
 import { FacebookService } from './facebook.service';
 import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
 import { SocialPage } from 'src/social_pages/entities/social_page.entity';
+import { FbMessage } from 'src/facebook_message/entities/facebook_message.entity';
 // import { Post } from 'src/posts/entities/post.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([SocialMessage, SocialPage]),
+    TypeOrmModule.forFeature([SocialMessage, SocialPage, FbMessage]),
   ],
   controllers: [FacebookController],
   providers: [FacebookService],

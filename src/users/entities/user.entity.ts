@@ -15,6 +15,7 @@ import {
 } from 'typeorm';
 import { UserRole } from '../enum/roles';
 import { TelegramChatEntity } from 'src/telegram_bot/entities/telegram_chat.entity';
+import { FbMessage } from 'src/facebook_message/entities/facebook_message.entity';
 
 @Entity('users') // main user table for login and manage system
 export class User {
@@ -65,6 +66,9 @@ export class User {
 
   @Column({ type: 'timestamp', nullable: true })
   lastLoginAt: Date;
+
+  @OneToMany(()=> FbMessage,(m) => m.user)
+  fbMessages: FbMessage[];
 
   // socialAccount: SocialAccount[];
 

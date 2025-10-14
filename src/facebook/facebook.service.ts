@@ -17,6 +17,10 @@ import { SocialPage } from 'src/social_pages/entities/social_page.entity';
 // import { Post } from 'src/posts/entities/post.entity';
 import { CreateSocialMessageFromCommentDto } from 'src/social_messages/dto/create-social-message-from-comment.dto';
 import { MessageType } from 'src/social_messages/enum/message_type';
+import { FbMessage } from 'src/facebook_message/entities/facebook_message.entity';
+import { CreateFacebookMessageDto } from 'src/facebook_message/dto/create_facebook_message.dto';
+import { log } from 'console';
+import { userInfo } from 'os';
 
 export interface FacebookUploadSessionResponse {
   id: string;
@@ -99,6 +103,8 @@ export class FacebookService {
     private socialPageRepository: Repository<SocialPage>,
     // @InjectRepository(Post)
     // private postRepository: Repository<Post>,
+    @InjectRepository(FbMessage)
+    private facebookMessageRepository: Repository<FbMessage>,
   ) {}
 
   /**
@@ -1563,6 +1569,97 @@ export class FacebookService {
   }
 
   /**
+   * Fetch and save all conversation messages for a page
+   * @param pageId - The Facebook page ID
+   * @param pageAccessToken - Page access token
+   * @param platform - 'messenger' or 'instagram'
+   * @param userId - Optional user ID to associate messages with
+   * @param since - Optional ISO timestamp to fetch messages since this time
+   * @returns Saved messages grouped by conversation
+   */
+  async fetchAndSaveAllPageMessages(
+    pageId: string,
+    pageAccessToken: string,
+    platform: 'messenger' | 'instagram' = 'messenger',
+    userId?: string,
+    since?: string,
+  ): Promise<{ [conversationId: string]: FbMessage[] }> {
+    try {
+      console.log(`🔄 Fetching and saving all messages for page ${pageId}`);
+
+      // Get all conversations
+      const conversationsData = await this.getPageConversations(pageId, pageAccessToken, platform);
+      
+      if (!conversationsData.data || conversationsData.data.length === 0) {
+        console.log('📭 No conversations found');
+        return {};
+      }
+
+      const savedMessagesByConversation: { [conversationId: string]: FbMessage[] } = {};
+
+      // For each conversation, fetch and save messages
+      for (const conversation of conversationsData.data) {
+        try {
+          console.log(`💬 Processing conversation ${conversation.id}`, {
+            conversationType: typeof conversation,
+            conversationKeys: Object.keys(conversation || {})
+          });
+
+          // Fetch all messages for this conversation
+          console.log(`🔍 Fetching messages for conversation ${conversation.id} with since: ${since}`);
+          const messages = await this.fetchAllConversationMessages(
+            conversation.id,
+            pageAccessToken,
+            true, // fetchAll
+            since,
+          );
+
+          console.log(`📊 Fetched ${messages.length} messages for conversation ${conversation.id}`);
+          
+          if (messages.length > 0) {
+            console.log(`💾 Sample message from conversation ${conversation.id}:`, {
+              messageId: messages[0].id,
+              hasMessage: !!messages[0].message,
+              messagePreview: messages[0].message?.substring(0, 100),
+              from: messages[0].from,
+              createdTime: messages[0].created_time,
+            });
+
+            // Save messages to database
+            const savedMessages = await this.saveFacebookMessages(
+              messages,
+              conversation.id,
+              userId,
+            );
+
+            savedMessagesByConversation[conversation.id] = savedMessages;
+            console.log(`✅ Saved ${savedMessages.length} messages for conversation ${conversation.id}`);
+          } else {
+            console.log(`📭 No messages found for conversation ${conversation.id} (possibly due to 'since' filter: ${since})`);
+            savedMessagesByConversation[conversation.id] = [];
+          }
+        } catch (error) {
+          console.error(`❌ Error processing conversation ${conversation.id}:`, error);
+          // Continue with other conversations
+        }
+      }
+
+      const totalSaved = Object.values(savedMessagesByConversation).reduce(
+        (sum, messages) => sum + messages.length,
+        0,
+      );
+
+      console.log(`🎉 Successfully processed ${conversationsData.data.length} conversations and saved ${totalSaved} messages`);
+      return savedMessagesByConversation;
+    } catch (error) {
+      console.error('❌ Failed to fetch and save page messages:', error);
+      throw new BadRequestException(
+        `Failed to fetch and save page messages: ${error.message}`,
+      );
+    }
+  }
+
+  /**
    * Get conversations with user profiles for a Facebook page
    * This combines conversations and user profile data
    * @param pageId - The Facebook page ID
@@ -1651,7 +1748,225 @@ export class FacebookService {
     }
   }
 
-  // ======================== SOCIAL MESSAGES METHODS ========================
+  async saveFacebookMessages(
+    messages: FacebookMessageResponse[],
+    conversationId: string,
+    userId?: string,
+  ): Promise<FbMessage[]> {
+    const savedMessages: FbMessage[] = [];
+    console.log('🔍 MESSAGES TO SAVE:', {
+      totalMessages: messages.length,
+      conversationId,
+      userId,
+      sampleMessage: messages[0] ? {
+        id: messages[0].id,
+        message: messages[0].message?.substring(0, 50),
+        from: messages[0].from,
+        created_time: messages[0].created_time,
+      } : 'No messages'
+    });
+    
+    if (messages.length === 0) {
+      console.log('⚠️ No messages to save');
+      return savedMessages;
+    }
+    
+    for (const message of messages) {
+      try {
+        console.log(`🔍 Processing message: ${message.id}`, {
+          hasMessage: !!message.message,
+          messageLength: message.message?.length || 0,
+          from: message.from,
+          to: message.to,
+        });
+
+        // Check if message already exists by Facebook message ID
+        const existingMessage = await this.facebookMessageRepository.findOne({
+          where: { facebookMessageId: message.id },
+        });
+        
+        if (existingMessage) {
+          console.log(`⏭️ Message ${message.id} already exists, skipping...`);
+          continue;
+        }
+
+        // Create the Facebook message entity
+        const fbMessage = this.facebookMessageRepository.create({
+          facebookMessageId: message.id,
+          conversationId: conversationId,
+          message: message.message || '',
+          from: {
+            name: message.from?.name || 'Unknown',
+            id: message.from?.id || '',
+            profile_pic: message.from?.profile_pic,
+          },
+          to: message.to || { data: [] },
+          // If you have a user relationship, you can set it here
+          // user: userId ? { id: userId } : null,
+        });
+
+        console.log(`💾 Attempting to save message ${message.id}...`);
+        const savedMessage = await this.facebookMessageRepository.save(fbMessage);
+        savedMessages.push(savedMessage);
+
+        console.log(`✅ Successfully saved message ${message.id} with internal ID: ${savedMessage.id}`);
+      } catch (error) {
+        console.error(
+          `❌ Failed to save message ${message.id}:`,
+          error.message,
+          error.stack,
+        );
+        // Continue with other messages even if one fails
+      }
+    }
+
+    console.log(`🎉 SAVE SUMMARY: Successfully saved ${savedMessages.length} out of ${messages.length} messages`);
+    return savedMessages;
+  }
+
+  /**
+   * Fetch and save messages for a specific conversation
+   * @param conversationId - The conversation ID
+   * @param pageAccessToken - Page access token
+   * @param userId - Optional user ID to associate messages with
+   * @param since - Optional ISO timestamp to fetch messages since this time
+   * @returns Saved messages
+   */
+  async fetchAndSaveConversationMessages(
+    conversationId: string,
+    pageAccessToken: string,
+    userId?: string,
+    since?: string,
+  ): Promise<FbMessage[]> {
+    try {
+      console.log(`💬 Fetching and saving messages for conversation ${conversationId}`);
+
+      // Fetch all messages for this conversation
+      const messages = await this.fetchAllConversationMessages(
+        conversationId,
+        pageAccessToken,
+        true, // fetchAll
+        since,
+      );
+
+      if (messages.length === 0) {
+        console.log(`📭 No new messages found for conversation ${conversationId}`);
+        return [];
+      }
+
+      // Save messages to database
+      const savedMessages = await this.saveFacebookMessages(
+        messages,
+        conversationId,
+        userId,
+      );
+
+      console.log(`✅ Successfully saved ${savedMessages.length} messages for conversation ${conversationId}`);
+      return savedMessages;
+    } catch (error) {
+      console.error(`❌ Failed to fetch and save conversation messages:`, error);
+      throw new BadRequestException(
+        `Failed to fetch and save conversation messages: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Get saved messages from database by conversation ID
+   * @param conversationId - The conversation ID
+   * @param limit - Maximum number of messages to return
+   * @param offset - Number of messages to skip
+   * @returns Saved messages from database
+   */
+  async getSavedMessagesByConversation(
+    conversationId: string,
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<{ messages: FbMessage[]; total: number }> {
+    try {
+      console.log('🔍 Getting saved messages with params:', {
+        conversationId,
+        limit,
+        offset,
+      });
+
+      // First, let's check if there are ANY messages in the database
+      const totalMessages = await this.facebookMessageRepository.count();
+      console.log('📊 Total messages in database:', totalMessages);
+
+      // Check messages for this specific conversation
+      const conversationMessages = await this.facebookMessageRepository.count({
+        where: { conversationId },
+      });
+      console.log(`📊 Messages for conversation ${conversationId}:`, conversationMessages);
+
+      // Get a sample of all messages to see what conversation IDs exist
+      const sampleMessages = await this.facebookMessageRepository.find({
+        take: 5,
+        select: ['id', 'conversationId', 'facebookMessageId', 'message'],
+      });
+      console.log('🔍 Sample messages in database:', sampleMessages);
+
+      const [messages, total] = await this.facebookMessageRepository.findAndCount({
+        where: { conversationId },
+        order: { create_at: 'DESC' },
+        take: limit,
+        skip: offset,
+        relations: ['user'],
+      });
+
+      console.log('🔍 Query result:', {
+        foundMessages: messages.length,
+        total,
+        queryUsed: { conversationId, limit, offset },
+      });
+
+      return { messages, total };
+    } catch (error) {
+      console.error('❌ Failed to get saved messages:', error);
+      throw new BadRequestException(
+        `Failed to get saved messages: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Debug method to get conversation info
+   */
+  async getDebugConversationInfo() {
+    try {
+      // Get total count
+      const total = await this.facebookMessageRepository.count();
+      
+      // Get unique conversation IDs
+      const conversationIds = await this.facebookMessageRepository
+        .createQueryBuilder('message')
+        .select('DISTINCT message.conversationId', 'conversationId')
+        .addSelect('COUNT(*)', 'messageCount')
+        .groupBy('message.conversationId')
+        .getRawMany();
+
+      // Get some sample messages
+      const samples = await this.facebookMessageRepository.find({
+        take: 10,
+        select: ['id', 'conversationId', 'facebookMessageId', 'message'],
+        order: { create_at: 'DESC' },
+      });
+
+      return {
+        totalMessages: total,
+        uniqueConversations: conversationIds.length,
+        conversationIds: conversationIds,
+        sampleMessages: samples,
+      };
+    } catch (error) {
+      console.error('❌ Failed to get debug info:', error);
+      throw new BadRequestException(`Failed to get debug info: ${error.message}`);
+    }
+  }
+ 
+
+  // ======================== SOCIAL MESSAGES (COMMENTS) METHODS ========================
 
   /**
    * Create a social message from Facebook comment data

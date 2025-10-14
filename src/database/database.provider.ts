@@ -1,6 +1,7 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { AnalyzedMessage } from 'src/analyzed_messages/entities/analyzed_message.entity';
 import { Buyer } from 'src/buyers/entities/buyer.entity';
+import { FbMessage } from 'src/facebook_message/entities/facebook_message.entity';
 import { Order } from 'src/orders/entities/order.entity';
 // import { Auth } from 'src/auth/entities/auth.entity';
 // import { Buyer } from 'src/buyers/entities/buyer.entity';
@@ -59,6 +60,7 @@ export function getDatabaseConfig(): TypeOrmModuleOptions {
       AnalyzedMessage,
       Buyer,
       Order,
+      FbMessage,
       TelegramChatEntity,
       TelegramBotEntity,
       TelegramBotSettingEntity,
