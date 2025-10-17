@@ -295,5 +295,43 @@ export class TelegramBotService {
     }
   }
 
+  async sendMessage(chatId: string, message: string): Promise<any> {
+    try {
+      const result = await this.bot.telegram.sendMessage(chatId, message);
+      return {
+        ok: true,
+        from: result.from,
+        chat: result.chat,
+      };
+    } catch (e) {
+      await this.bot.telegram.sendMessage(chatId, "nuh uh")
+      return {
+        ok: false,
+        error: (e as Error).message,
+      };
+    }
+  }
+
+  async sendMessageToChats(chatIds: string[], message: string): Promise<any> {
+    try {
+      const results: any[] = [];
+
+      for (const chatId of chatIds) {
+        const result = await this.bot.telegram.sendMessage(chatId, message);
+        results.push(result);
+      }
+      return {
+        ok: true,
+        from: results[0].from,
+        chat: results[0].chat,
+      };
+    } catch (e) {
+      return {
+        ok: false,
+        error: (e as Error).message,
+      };
+    }
+  }
+
 
 }

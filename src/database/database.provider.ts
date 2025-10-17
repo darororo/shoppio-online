@@ -75,7 +75,7 @@ export function getDatabaseConfig(): TypeOrmModuleOptions {
     retryAttempts: 3,
     retryDelay: 3000,
     // Don't drop schema by default; preserves local DB when restarting dev containers
-    dropSchema: true,
+    // dropSchema: true,
     schema,
   };
 }

@@ -35,6 +35,16 @@ export class TelegramBotController {
     return this.botService.getAllChats()
   }
 
+  @Post("/send-text")
+  async sendText(@Body("chatId") chatId: string, @Body('message') message: string) {
+    if (message) return this.botService.sendMessage(chatId, message);
+  }
+
+  @Post("/send-message-to-chats")
+  async sendTextToChats(@Body('chatIds') chatIds: string[], @Body('message') message) {
+    if (message) return this.botService.sendMessageToChats(chatIds, message);
+  }
+
   @Post("/send-photo")
   @UseInterceptors(FileInterceptor('photo'))
   async sendPhoto(@Body("chatId") chatId: string, @Body("photoUrl") photoUrl: string, @UploadedFile() photo: Express.Multer.File) {
