@@ -295,6 +295,22 @@ export class TelegramBotService {
     }
   }
 
+  async deleteChat(chat: CreateTelegramChatDto) {
+    try {
+      const result = await this.chatRepo.delete(chat);
+      return {
+        ok: true,
+        result: result
+      }
+    } catch (e) {
+      console.error('Error deleting chat:', e);
+      return {
+        ok: false,
+        error: e instanceof Error ? e.message : 'Unknown error occurred',
+      };
+    }
+  }
+
   async sendMessage(chatId: string, message: string): Promise<any> {
     try {
       const result = await this.bot.telegram.sendMessage(chatId, message);

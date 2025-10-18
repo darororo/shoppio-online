@@ -155,4 +155,33 @@ export class TelegramBotUpdate {
         }
 
     }
+
+    @On("left_chat_member")
+    async onAddedToChat(@Ctx() ctx: Context) {
+        try {
+            console.log('I AM REMOVED')
+            const chat = await ctx.getChat();
+            const type = chat.type;
+            const id = chat.id;
+            const chatId = chat.id;
+            const botId = (await ctx.telegram.getMe()).id.toString();
+
+            const result = await this.botService.deleteChat({
+                chatId: chatId,
+                botId: botId,
+                title: chat.title,
+                type: type,
+            });
+
+            console.log("I AM DELETED FROM CHAT")
+            console.log(ctx)
+            console.log((await ctx.getChat()).id)
+            return "BONJOUR"
+
+        } catch (e) {
+            console.error(e)
+            return "nuh uh";
+        }
+
+    }
 }

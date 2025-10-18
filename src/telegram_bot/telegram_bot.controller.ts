@@ -35,7 +35,7 @@ export class TelegramBotController {
     return this.botService.getAllChats()
   }
 
-  @Post("/send-text")
+  @Post("/send-message")
   async sendText(@Body("chatId") chatId: string, @Body('message') message: string) {
     if (message) return this.botService.sendMessage(chatId, message);
   }
