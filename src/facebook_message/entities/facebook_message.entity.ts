@@ -1,3 +1,4 @@
+import { AnalyzedMessage } from 'src/analyzed_messages/entities/analyzed_message.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Column,
@@ -22,6 +23,11 @@ export class FbMessage {
 
   @ManyToOne(() => User, (user) => user.fbMessages)
   user: User;
+  @OneToMany(
+    () => AnalyzedMessage,
+    (analyzedMessage) => analyzedMessage.message,
+  )
+  analyzedMessages: AnalyzedMessage[];
 
   @Column({ nullable: false })
   conversationId: string;

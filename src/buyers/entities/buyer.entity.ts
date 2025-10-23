@@ -1,5 +1,5 @@
 import { Order } from 'src/orders/entities/order.entity';
-import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
+import { FbComment } from 'src/fb_comment/entities/fb_comment.entity';
 import {
   Column,
   CreateDateColumn,
@@ -29,8 +29,8 @@ export class Buyer {
   @UpdateDateColumn()
   update_at: Date;
 
-  @OneToMany(() => SocialMessage, (socialMessage) => socialMessage.buyer)
-  socialMessages: SocialMessage[];
+  @OneToMany(() => FbComment, (fbComment) => fbComment.buyer)
+  socialMessages: FbComment[];
 
   @OneToMany(() => Order, (order) => order.buyer)
   order: Order[];

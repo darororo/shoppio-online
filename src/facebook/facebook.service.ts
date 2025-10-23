@@ -12,11 +12,11 @@ import {
   FacebookMessageResponse,
   FacebookMessagesListResponse,
 } from './dto/facebook-conversation.dto';
-import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
+import { FbComment } from 'src/fb_comment/entities/fb_comment.entity';
 import { SocialPage } from 'src/social_pages/entities/social_page.entity';
 // import { Post } from 'src/posts/entities/post.entity';
-import { CreateSocialMessageFromCommentDto } from 'src/social_messages/dto/create-social-message-from-comment.dto';
-import { MessageType } from 'src/social_messages/enum/message_type';
+import { CreateSocialMessageFromCommentDto } from 'src/fb_comment/dto/create-social-message-from-comment.dto';
+import { MessageType } from 'src/fb_comment/enum/message_type';
 import { FbMessage } from 'src/facebook_message/entities/facebook_message.entity';
 import { CreateFacebookMessageDto } from 'src/facebook_message/dto/create_facebook_message.dto';
 import { log } from 'console';
@@ -97,8 +97,8 @@ export class FacebookService {
   private readonly facebookGraphURL = 'https://graph.facebook.com/v23.0';
 
   constructor(
-    @InjectRepository(SocialMessage)
-    private socialMessageRepository: Repository<SocialMessage>,
+    @InjectRepository(FbComment)
+    private socialMessageRepository: Repository<FbComment>,
     @InjectRepository(SocialPage)
     private socialPageRepository: Repository<SocialPage>,
     // @InjectRepository(Post)
@@ -1973,7 +1973,7 @@ export class FacebookService {
    */
   async createFromFacebookComment(
     dto: CreateSocialMessageFromCommentDto,
-  ): Promise<SocialMessage> {
+  ): Promise<FbComment> {
     // Find the social page
     const socialPage = await this.socialPageRepository.findOne({
       where: { id: dto.social_page_id },
@@ -2016,8 +2016,8 @@ export class FacebookService {
     socialPageId: string,
     facebookPostId: string,
     postId?: string,
-  ): Promise<SocialMessage[]> {
-    const savedMessages: SocialMessage[] = [];
+  ): Promise<FbComment[]> {
+    const savedMessages: FbComment[] = [];
 
     console.log('COMMENTS TO SAVE');
     console.log(comments);
@@ -2066,7 +2066,7 @@ export class FacebookService {
    */
   async findCommentsByFacebookPostId(
     facebookPostId: string,
-  ): Promise<SocialMessage[]> {
+  ): Promise<FbComment[]> {
     return await this.socialMessageRepository.find({
       where: {
         facebook_post_id: facebookPostId,
@@ -2082,7 +2082,7 @@ export class FacebookService {
    */
   async findCommentsBySocialPage(
     socialPageId: string,
-  ): Promise<SocialMessage[]> {
+  ): Promise<FbComment[]> {
     return await this.socialMessageRepository.find({
       where: {
         socialPage: { id: socialPageId },
@@ -2098,7 +2098,7 @@ export class FacebookService {
    */
   async findByFacebookCommentId(
     facebookCommentId: string,
-  ): Promise<SocialMessage | null> {
+  ): Promise<FbComment | null> {
     return await this.socialMessageRepository.findOne({
       where: { facebook_comment_id: facebookCommentId },
       relations: ['socialPage', 'post', 'buyer'],
@@ -2137,7 +2137,7 @@ export class FacebookService {
   async findAllCommentsWithPagination(
     skip: number,
     limit: number,
-  ): Promise<[SocialMessage[], number]> {
+  ): Promise<[FbComment[], number]> {
     return await this.socialMessageRepository.findAndCount({
       skip,
       take: limit,
@@ -2151,7 +2151,7 @@ export class FacebookService {
    */
   async findCommentsBySocialPageId(
     socialPageId: string,
-  ): Promise<SocialMessage[]> {
+  ): Promise<FbComment[]> {
     return await this.socialMessageRepository.find({
       where: { socialPage: { id: socialPageId } },
       relations: ['socialPage', 'post', 'buyer'],

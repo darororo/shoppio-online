@@ -1,5 +1,5 @@
 import { Order } from 'src/orders/entities/order.entity';
-import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
+import { FbComment } from 'src/fb_comment/entities/fb_comment.entity';
 import {
   Column,
   CreateDateColumn,
@@ -9,6 +9,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { IntentionEnum } from '../enum/intention_enum';
+import { FbMessage } from 'src/facebook_message/entities/facebook_message.entity';
 
 @Entity('analyze_messages')
 export class AnalyzedMessage {
@@ -21,10 +22,14 @@ export class AnalyzedMessage {
   @Column({ nullable: true })
   location: string;
 
-  @ManyToOne(() => SocialMessage, (msg) => msg.analyzedMessages, {
+  @ManyToOne(() => FbComment, (msg) => msg.analyzedMessages, {
     onDelete: 'CASCADE',
   })
-  message: SocialMessage;
+  comment: FbComment;
+  @ManyToOne(() => FbMessage, (msg) => msg.analyzedMessages, {
+    onDelete: 'CASCADE',
+  })
+  message: FbMessage;
 
   @Column({ type: 'varchar', enum: IntentionEnum, nullable: true })
   intention: IntentionEnum; // e.g., buy, info, complaint, support, others

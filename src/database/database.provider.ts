@@ -11,7 +11,7 @@ import { Order } from 'src/orders/entities/order.entity';
 // import { PostDistribution } from 'src/post_distributions/entities/post_distribution.entity';
 // import { Post } from 'src/posts/entities/post.entity';
 // import { SocialAccount } from 'src/social_account/entities/social_account.entity';
-import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
+import { FbComment } from 'src/fb_comment/entities/fb_comment.entity';
 import { SocialPage } from 'src/social_pages/entities/social_page.entity';
 import { TelegramBotEntity } from 'src/telegram_bot/entities/telegram_bot.entity';
 import { TelegramBotSettingEntity } from 'src/telegram_bot/entities/telegram_bot_setting_entity';
@@ -55,7 +55,7 @@ export function getDatabaseConfig(): TypeOrmModuleOptions {
     database,
     entities: [
       User,
-      SocialMessage,
+      FbComment,
       SocialPage,
       AnalyzedMessage,
       Buyer,
@@ -75,7 +75,7 @@ export function getDatabaseConfig(): TypeOrmModuleOptions {
     retryAttempts: 3,
     retryDelay: 3000,
     // Don't drop schema by default; preserves local DB when restarting dev containers
-    // dropSchema: true,
+    dropSchema: true,
     schema,
   };
 }

@@ -1,6 +1,6 @@
 // import { PostDistribution } from 'src/post_distributions/entities/post_distribution.entity';
 // import { SocialAccount } from 'src/social_account/entities/social_account.entity';
-import { SocialMessage } from 'src/social_messages/entities/social_message.entity';
+import { FbComment } from 'src/fb_comment/entities/fb_comment.entity';
 import {
   Column,
   CreateDateColumn,
@@ -51,6 +51,6 @@ export class SocialPage {
   // )
   // postDistributions: PostDistribution[];
 
-  @OneToMany(() => SocialMessage, (socialMessage) => socialMessage.socialPage)
-  messages: SocialMessage[];
+  @OneToMany(() => FbComment, (fbComment) => fbComment.socialPage)
+  messages: FbComment[];
 }

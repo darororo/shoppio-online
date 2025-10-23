@@ -12,8 +12,8 @@ import {
 } from 'typeorm';
 import { MessageType } from '../enum/message_type';
 
-@Entity('social_messages') // Original messages table from social media platform
-export class SocialMessage {
+@Entity('fb_comments') // Facebook comments table
+export class FbComment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
