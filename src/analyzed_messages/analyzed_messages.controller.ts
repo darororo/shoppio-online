@@ -52,6 +52,13 @@ export class AnalyzedMessagesController {
     return this.analyzedMessagesService.findByMessageId(messageId);
   }
 
+  @Get('buyer/:buyerId')
+  async findbyBuyerId(
+    @Param('buyerId') buyerId: string,
+  ): Promise<AnalyzedMessage[]> {
+    return this.analyzedMessagesService.findByBuyerId(buyerId);
+  }
+
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -65,6 +72,6 @@ export class AnalyzedMessagesController {
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.analyzedMessagesService.remove(+id);
+    return this.analyzedMessagesService.remove(id);
   }
 }

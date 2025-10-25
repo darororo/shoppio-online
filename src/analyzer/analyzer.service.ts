@@ -6,6 +6,7 @@ import { CreateAnalyzedMessageDto } from 'src/analyzed_messages/dto/create-analy
 import { GeminiService } from './gemini.service';
 import { CreateOrderDto } from 'src/orders/dto/create-order.dto';
 import { OrdersService } from 'src/orders/orders.service';
+import { FbMessage } from 'src/facebook_message/entities/facebook_message.entity';
 
 @Injectable()
 export class AnalyzerService {
@@ -24,111 +25,148 @@ export class AnalyzerService {
   }> {
     this.logger.log('Starting analysis of unprocessed raw data...');
 
-    const unprocessedData = await this.facebookService.findUnprocessed();
-    // const unpresscessedMessages = unprocessedData;
-    // const messageIds = unprocessedData.messageIds;
+    const comments = await this.facebookService.findUnprocessedComment();
 
     let processed = 0;
     let errors = 0;
 
-    // for (const rawData of unpresscessedMessages) {
-    //   try {
-    //     // 🔹 Combine all buyer messages into one transcript
-    //     const combinedMessages = rawData.messages.join('\n');
+    for (const msg of comments) {
+      try {
+        this.logger.log(
+          `Analyzing message ${msg.id} from buyer ${msg.buyer} (${msg.sender_id})...`,
+        );
 
-    //     this.logger.log(
-    //       `Analyzing buyer ${rawData.buyer} (${rawData.buyer_id}) with ${rawData.messages.length} messages...`,
-    //     );
+        const analysis = await this.geminiService.analyzeMessage(
+          msg.message_text,
+        );
 
-    //     // 🔹 Call Gemini once with the full conversation
-    //     const analysis =
-    //       await this.geminiService.analyzeMessage(combinedMessages);
+        const createAnalyzedDataDto: CreateAnalyzedMessageDto = {
+          buyerId: msg.sender_id,
+          buyerName: msg.sender_name,
+          intention: analysis.intent,
+          confidence_score: analysis.confidence_score,
+          analysisNote: analysis.analysis_notes,
+          location: analysis.location,
+          phoneNumber: analysis.phone_number,
+        };
 
-    //     // 🔹 Save only one analysis result per buyer
-    //     const createAnalyzedDataDto: CreateAnalyzedMessageDto = {
-    //       buyerId: rawData.buyer_id,
-    //       buyerName: rawData.buyer,
-    //       intention: analysis.intent,
-    //       confidence_score: analysis.confidence_score,
-    //       analysisNote: analysis.analysis_notes,
-    //       location: analysis.location,
-    //       phoneNumber: analysis.phone_number,
-    //     };
+        const createOrderDto: CreateOrderDto = {
+          buyerId: msg.sender_id,
+          buyerName: msg.sender_name,
+          product_name: analysis.product,
+          quantity: analysis.quantity,
+        };
 
-    //     const createOrderDto: CreateOrderDto = {
-    //       product_name: analysis.product,
-    //       quantity: analysis.quantity,
-    //     };
+        await this.analyzedDataService.create(createAnalyzedDataDto);
+        await this.orderService.create(createOrderDto);
 
-    //     await this.analyzedDataService.create(createAnalyzedDataDto);
-
-    //     // // 🔹 Mark as processed
-
-    //     for (const id in messageIds) {
-    //       await this.socialMessageService.markAsProcessed(id);
-    //       console.log('Here here');
-    //       processed++;
-    //     }
-
-    //     this.logger.log(
-    //       `Processed buyer ${rawData.buyer}: ${analysis.intent} (confidence: ${analysis.confidence_score})`,
-    //     );
-    //   } catch (error) {
-    //     this.logger.error(
-    //       `Error processing buyer ${rawData.buyer}: ${error.message}`,
-    //       error.stack,
-    //     );
-    //     errors++;
-    //   }
-    // }
-
-    for (const rawData of unprocessedData) {
-      for (const msg of rawData.messages) {
-        try {
-          this.logger.log(
-            `Analyzing message ${msg.id} from buyer ${msg.buyer} (${msg.buyer_id})...`,
-          );
-
-          const analysis = await this.geminiService.analyzeMessage(
-            msg.message_text,
-          );
-
-          const createAnalyzedDataDto: CreateAnalyzedMessageDto = {
-            buyerId: msg.buyer_id,
-            buyerName: msg.buyer,
-            intention: analysis.intent,
-            confidence_score: analysis.confidence_score,
-            analysisNote: analysis.analysis_notes,
-            location: analysis.location,
-            phoneNumber: analysis.phone_number,
-          };
-
-          const createOrderDto: CreateOrderDto = {
-            buyerId: msg.buyer_id,
-            buyerName: msg.buyer,
-            product_name: analysis.product,
-            quantity: analysis.quantity,
-          };
-
-          await this.analyzedDataService.create(createAnalyzedDataDto);
-          await this.orderService.create(createOrderDto);
-
-          // Mark this single message as processed
-          await this.facebookService.markAsProcessed(msg.id);
-          processed++;
-        } catch (error) {
-          this.logger.error(
-            `Error processing message ${msg.id} from buyer ${msg.buyer}: ${error.message}`,
-            error.stack,
-          );
-          errors++;
-        }
+        // Mark this single message as processed
+        await this.facebookService.markAsProcessed(msg.id);
+        processed++;
+      } catch (error) {
+        this.logger.error(
+          `Error processing message ${msg.id} from buyer ${msg.buyer}: ${error.message}`,
+          error.stack,
+        );
+        errors++;
       }
-    }
 
-    this.logger.log(
-      `Analysis complete. Processed: ${processed}, Errors: ${errors}`,
+      this.logger.log(
+        `Analysis complete. Processed: ${processed}, Errors: ${errors}`,
+      );
+    }
+    return { processed, errors };
+  }
+
+  async processUnanalyzedChat(): Promise<{
+    processed: number;
+    errors: number;
+  }> {
+    this.logger.log('Starting analysis of unprocessed raw data...');
+
+    const chats = await this.facebookService.findUnprocessedChat();
+
+    console.log(chats);
+
+    const grouped = chats.reduce(
+      (acc, chat) => {
+        if (!acc[chat.conversationId]) acc[chat.conversationId] = [];
+        acc[chat.conversationId].push(chat);
+        return acc;
+      },
+      {} as Record<string, any[]>,
     );
+
+    // const grouped = chats.reduce(
+    //   (acc, chat) => {
+    //     if (!acc[chat.conversationId]) acc[chat.conversationId] = [];
+    //     acc[chat.conversationId].push({ message: chat.message });
+    //     return acc;
+    //   },
+    //   {} as Record<string, any[]>,
+    // );
+    // const grouped = {
+    //   conversationId: chats[0].conversationId,
+    //   buyerId: chats[0].from.id,
+    //   buyer: chats[0].from.name,
+    //   messages: <any>[],
+    // };
+
+    let processed = 0;
+    let errors = 0;
+
+    for (const [conversationId, messages] of Object.entries(grouped)) {
+      try {
+        this.logger.log(
+          `Analyzing conversation: ${conversationId} (${messages.length} messages)`,
+        );
+
+        const conversationText = messages.map((m) => m.message);
+
+        console.log(conversationText);
+
+        const analysis = await this.geminiService.analyzeMessage(
+          JSON.stringify(conversationText),
+        );
+
+        const createAnalyzedDataDto: CreateAnalyzedMessageDto = {
+          buyerId: messages[0].from.id,
+          buyerName: messages[0].from.name,
+          intention: analysis.intent,
+          confidence_score: analysis.confidence_score,
+          analysisNote: analysis.analysis_notes,
+          location: analysis.location,
+          phoneNumber: analysis.phone_number,
+        };
+
+        const createOrderDto: CreateOrderDto = {
+          buyerId: messages[0].from.id,
+          buyerName: messages[0].from.name,
+          product_name: analysis.product,
+          quantity: analysis.quantity,
+        };
+
+        await this.analyzedDataService.create(createAnalyzedDataDto);
+        await this.orderService.create(createOrderDto);
+
+        await Promise.all(
+          messages.map((msg) =>
+            this.facebookService.markFbMessageAsProcessed(msg.id),
+          ),
+        );
+
+        processed++;
+      } catch (error) {
+        this.logger.log(
+          `Error processing conversation ${conversationId}: ${error.message}`,
+          error.stack,
+        );
+        errors++;
+      }
+      this.logger.log(
+        `Analysis complete. Processed: ${processed}, Errors: ${errors}`,
+      );
+    }
     return { processed, errors };
   }
 }

@@ -929,25 +929,32 @@ export class FacebookService {
       }
 
       const result = (await response.json()) as FacebookMessageResponse;
-      
+
       // Debug sticker data
       if (result.sticker) {
         console.log('🎭 Sticker data received from Facebook API:', {
           messageId: messageId,
-          sticker: result.sticker
+          sticker: result.sticker,
         });
       }
-      
+
       // Try to fetch user profile picture if this is a user message
       if (result.from?.id && result.from.id !== 'me') {
         try {
-          const userProfile = await this.getUserProfile(result.from.id, pageAccessToken, 'profile_pic');
+          const userProfile = await this.getUserProfile(
+            result.from.id,
+            pageAccessToken,
+            'profile_pic',
+          );
           if (userProfile?.profile_pic) {
             result.from.profile_pic = userProfile.profile_pic;
             console.log(`� Fetched user profile picture for ${result.from.id}`);
           }
         } catch (profileError) {
-          console.log(`⚠️ Could not fetch user profile picture for ${result.from.id}:`, profileError.message);
+          console.log(
+            `⚠️ Could not fetch user profile picture for ${result.from.id}:`,
+            profileError.message,
+          );
         }
       }
 
@@ -1057,11 +1064,11 @@ export class FacebookService {
       let filteredMessages = messagesWithDetails;
       if (since) {
         const sinceDate = new Date(since);
-        filteredMessages = messagesWithDetails.filter(msg => {
+        filteredMessages = messagesWithDetails.filter((msg) => {
           const messageDate = new Date(msg.created_time);
           return messageDate > sinceDate;
         });
-        
+
         console.log(
           `🔄 Filtered to ${filteredMessages.length} messages since ${since} (from ${messagesWithDetails.length} total)`,
         );
@@ -1135,15 +1142,17 @@ export class FacebookService {
   async getPageConversations(
     pageId: string,
     pageAccessToken: string,
-    platform: 'messenger' | 'instagram' = 'messenger'
+    platform: 'messenger' | 'instagram' = 'messenger',
   ) {
     try {
-      console.log(`📋 Fetching conversations for page ${pageId} on ${platform}`);
+      console.log(
+        `📋 Fetching conversations for page ${pageId} on ${platform}`,
+      );
 
       const url = `${this.facebookGraphURL}/${pageId}/conversations?platform=${platform}&access_token=${pageAccessToken}`;
-      
+
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         const error = await response.json();
         console.error('❌ Facebook API error response:', error);
@@ -1153,7 +1162,9 @@ export class FacebookService {
       }
 
       const result = await response.json();
-      console.log(`✅ Successfully fetched ${result.data?.length || 0} conversations for page ${pageId}`);
+      console.log(
+        `✅ Successfully fetched ${result.data?.length || 0} conversations for page ${pageId}`,
+      );
 
       return result;
     } catch (error) {
@@ -1173,15 +1184,15 @@ export class FacebookService {
   async getConversationMessages(
     conversationId: string,
     pageAccessToken: string,
-    fields: string = 'messages{id,created_time,from,to,message}'
+    fields: string = 'messages{id,created_time,from,to,message}',
   ) {
     try {
       console.log(`📨 Fetching messages for conversation ${conversationId}`);
 
       const url = `${this.facebookGraphURL}/${conversationId}?fields=${encodeURIComponent(fields)}&access_token=${pageAccessToken}`;
-      
+
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         const error = await response.json();
         console.error('❌ Facebook API error response:', error);
@@ -1191,7 +1202,9 @@ export class FacebookService {
       }
 
       const result = await response.json();
-      console.log(`✅ Successfully fetched ${result.messages?.data?.length || 0} messages for conversation ${conversationId}`);
+      console.log(
+        `✅ Successfully fetched ${result.messages?.data?.length || 0} messages for conversation ${conversationId}`,
+      );
 
       return result;
     } catch (error) {
@@ -1211,41 +1224,43 @@ export class FacebookService {
   async getUserProfile(
     psid: string,
     pageAccessToken: string,
-    fields: string = 'first_name,last_name,profile_pic,locale,timezone,gender'
+    fields: string = 'first_name,last_name,profile_pic,locale,timezone,gender',
   ) {
     try {
       console.log(`👤 Fetching user profile for PSID ${psid}`);
 
       const url = `${this.facebookGraphURL}/${psid}?fields=${encodeURIComponent(fields)}&access_token=${pageAccessToken}`;
-      
+
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         const error = await response.json();
         console.error('❌ Facebook API error response:', error);
-        
+
         // Handle specific error for users without available profiles
         if (error.error?.code === 2018218) {
-          console.warn('⚠️ No profile available for this user (phone number account)');
+          console.warn(
+            '⚠️ No profile available for this user (phone number account)',
+          );
           return {
             first_name: 'Unknown',
-            last_name: 'User', 
+            last_name: 'User',
             profile_pic: null,
-            psid: psid
+            psid: psid,
           };
         }
-        
-        throw new Error(
-          error.error?.message || 'Failed to fetch user profile',
-        );
+
+        throw new Error(error.error?.message || 'Failed to fetch user profile');
       }
 
       const result = await response.json();
-      console.log(`✅ Successfully fetched profile for user: ${result.first_name} ${result.last_name}`);
+      console.log(
+        `✅ Successfully fetched profile for user: ${result.first_name} ${result.last_name}`,
+      );
 
       return {
         ...result,
-        psid: psid // Include the PSID for reference
+        psid: psid, // Include the PSID for reference
       };
     } catch (error) {
       console.error('❌ Failed to fetch user profile:', error);
@@ -1255,7 +1270,7 @@ export class FacebookService {
         last_name: 'User',
         profile_pic: null,
         psid: psid,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -1273,8 +1288,12 @@ export class FacebookService {
     recipientId: string,
     message: FacebookMessage,
     pageAccessToken: string,
-    messagingType: 'RESPONSE' | 'UPDATE' | 'MESSAGE_TAG' | 'NON_PROMOTIONAL_SUBSCRIPTION' = 'RESPONSE',
-    tag?: string
+    messagingType:
+      | 'RESPONSE'
+      | 'UPDATE'
+      | 'MESSAGE_TAG'
+      | 'NON_PROMOTIONAL_SUBSCRIPTION' = 'RESPONSE',
+    tag?: string,
   ): Promise<FacebookSendMessageResponse> {
     try {
       console.log(`📤 Sending message to recipient ${recipientId}...`);
@@ -1283,13 +1302,13 @@ export class FacebookService {
       this.validateMessage(message);
 
       const url = `${this.facebookGraphURL}/me/messages`;
-      
+
       const payload: any = {
         recipient: {
-          id: recipientId
+          id: recipientId,
         },
         message: message,
-        messaging_type: messagingType
+        messaging_type: messagingType,
       };
 
       // Add tag if provided (required for MESSAGE_TAG type)
@@ -1303,28 +1322,26 @@ export class FacebookService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${pageAccessToken}`
+          Authorization: `Bearer ${pageAccessToken}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const error = await response.json();
         console.error('❌ Facebook Send API error response:', error);
-        throw new Error(
-          error.error?.message || 'Failed to send message',
-        );
+        throw new Error(error.error?.message || 'Failed to send message');
       }
 
-      const result = await response.json() as FacebookSendMessageResponse;
-      console.log(`✅ Successfully sent message. Message ID: ${result.message_id}`);
+      const result = (await response.json()) as FacebookSendMessageResponse;
+      console.log(
+        `✅ Successfully sent message. Message ID: ${result.message_id}`,
+      );
 
       return result;
     } catch (error) {
       console.error('❌ Failed to send message:', error);
-      throw new BadRequestException(
-        `Failed to send message: ${error.message}`,
-      );
+      throw new BadRequestException(`Failed to send message: ${error.message}`);
     }
   }
 
@@ -1335,7 +1352,8 @@ export class FacebookService {
   private validateMessage(message: FacebookMessage): void {
     // Either text or attachment must be set, but not both
     const hasText = message.text && message.text.trim().length > 0;
-    const hasAttachment = message.attachment !== null && message.attachment !== undefined;
+    const hasAttachment =
+      message.attachment !== null && message.attachment !== undefined;
 
     if (!hasText && !hasAttachment) {
       throw new Error('Message must contain either text or attachment');
@@ -1362,7 +1380,9 @@ export class FacebookService {
     if (hasAttachment) {
       const validTypes = ['audio', 'file', 'image', 'template', 'video'];
       if (!validTypes.includes(message.attachment!.type)) {
-        throw new Error(`Attachment type must be one of: ${validTypes.join(', ')}`);
+        throw new Error(
+          `Attachment type must be one of: ${validTypes.join(', ')}`,
+        );
       }
 
       if (!message.attachment!.payload) {
@@ -1393,10 +1413,10 @@ export class FacebookService {
     recipientId: string,
     text: string,
     pageAccessToken: string,
-    quickReplies?: FacebookQuickReply[]
+    quickReplies?: FacebookQuickReply[],
   ): Promise<FacebookSendMessageResponse> {
     const message: FacebookMessage = {
-      text: text
+      text: text,
     };
 
     if (quickReplies && quickReplies.length > 0) {
@@ -1420,16 +1440,16 @@ export class FacebookService {
     attachmentType: 'image' | 'audio' | 'video' | 'file',
     attachmentUrl: string,
     pageAccessToken: string,
-    isReusable: boolean = false
+    isReusable: boolean = false,
   ): Promise<FacebookSendMessageResponse> {
     const message: FacebookMessage = {
       attachment: {
         type: attachmentType as 'image' | 'audio' | 'video' | 'file',
         payload: {
           url: attachmentUrl,
-          is_reusable: isReusable
-        }
-      }
+          is_reusable: isReusable,
+        },
+      },
     };
 
     return this.sendMessage(recipientId, message, pageAccessToken);
@@ -1447,16 +1467,16 @@ export class FacebookService {
     recipientId: string,
     templateType: 'generic' | 'button' | 'receipt' | 'media',
     templatePayload: any,
-    pageAccessToken: string
+    pageAccessToken: string,
   ): Promise<FacebookSendMessageResponse> {
     const message: FacebookMessage = {
       attachment: {
         type: 'template' as const,
         payload: {
           template_type: templateType,
-          ...templatePayload
-        }
-      }
+          ...templatePayload,
+        },
+      },
     };
 
     return this.sendMessage(recipientId, message, pageAccessToken);
@@ -1488,9 +1508,14 @@ export class FacebookService {
         payload?: string;
       }>;
     }>,
-    pageAccessToken: string
+    pageAccessToken: string,
   ): Promise<FacebookSendMessageResponse> {
-    return this.sendTemplate(recipientId, 'generic', { elements }, pageAccessToken);
+    return this.sendTemplate(
+      recipientId,
+      'generic',
+      { elements },
+      pageAccessToken,
+    );
   }
 
   /**
@@ -1510,9 +1535,14 @@ export class FacebookService {
       url?: string;
       payload?: string;
     }>,
-    pageAccessToken: string
+    pageAccessToken: string,
   ): Promise<FacebookSendMessageResponse> {
-    return this.sendTemplate(recipientId, 'button', { text, buttons }, pageAccessToken);
+    return this.sendTemplate(
+      recipientId,
+      'button',
+      { text, buttons },
+      pageAccessToken,
+    );
   }
 
   /**
@@ -1525,35 +1555,35 @@ export class FacebookService {
   async sendSenderAction(
     recipientId: string,
     action: 'typing_on' | 'typing_off' | 'mark_seen',
-    pageAccessToken: string
+    pageAccessToken: string,
   ): Promise<{ recipient_id: string }> {
     try {
-      console.log(`📤 Sending sender action '${action}' to recipient ${recipientId}...`);
+      console.log(
+        `📤 Sending sender action '${action}' to recipient ${recipientId}...`,
+      );
 
       const url = `${this.facebookGraphURL}/me/messages`;
-      
+
       const payload = {
         recipient: {
-          id: recipientId
+          id: recipientId,
         },
-        sender_action: action
+        sender_action: action,
       };
 
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${pageAccessToken}`
+          Authorization: `Bearer ${pageAccessToken}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const error = await response.json();
         console.error('❌ Facebook Send API error response:', error);
-        throw new Error(
-          error.error?.message || 'Failed to send sender action',
-        );
+        throw new Error(error.error?.message || 'Failed to send sender action');
       }
 
       const result = await response.json();
@@ -1588,25 +1618,33 @@ export class FacebookService {
       console.log(`🔄 Fetching and saving all messages for page ${pageId}`);
 
       // Get all conversations
-      const conversationsData = await this.getPageConversations(pageId, pageAccessToken, platform);
-      
+      const conversationsData = await this.getPageConversations(
+        pageId,
+        pageAccessToken,
+        platform,
+      );
+
       if (!conversationsData.data || conversationsData.data.length === 0) {
         console.log('📭 No conversations found');
         return {};
       }
 
-      const savedMessagesByConversation: { [conversationId: string]: FbMessage[] } = {};
+      const savedMessagesByConversation: {
+        [conversationId: string]: FbMessage[];
+      } = {};
 
       // For each conversation, fetch and save messages
       for (const conversation of conversationsData.data) {
         try {
           console.log(`💬 Processing conversation ${conversation.id}`, {
             conversationType: typeof conversation,
-            conversationKeys: Object.keys(conversation || {})
+            conversationKeys: Object.keys(conversation || {}),
           });
 
           // Fetch all messages for this conversation
-          console.log(`🔍 Fetching messages for conversation ${conversation.id} with since: ${since}`);
+          console.log(
+            `🔍 Fetching messages for conversation ${conversation.id} with since: ${since}`,
+          );
           const messages = await this.fetchAllConversationMessages(
             conversation.id,
             pageAccessToken,
@@ -1614,16 +1652,21 @@ export class FacebookService {
             since,
           );
 
-          console.log(`📊 Fetched ${messages.length} messages for conversation ${conversation.id}`);
-          
+          console.log(
+            `📊 Fetched ${messages.length} messages for conversation ${conversation.id}`,
+          );
+
           if (messages.length > 0) {
-            console.log(`💾 Sample message from conversation ${conversation.id}:`, {
-              messageId: messages[0].id,
-              hasMessage: !!messages[0].message,
-              messagePreview: messages[0].message?.substring(0, 100),
-              from: messages[0].from,
-              createdTime: messages[0].created_time,
-            });
+            console.log(
+              `💾 Sample message from conversation ${conversation.id}:`,
+              {
+                messageId: messages[0].id,
+                hasMessage: !!messages[0].message,
+                messagePreview: messages[0].message?.substring(0, 100),
+                from: messages[0].from,
+                createdTime: messages[0].created_time,
+              },
+            );
 
             // Save messages to database
             const savedMessages = await this.saveFacebookMessages(
@@ -1633,13 +1676,20 @@ export class FacebookService {
             );
 
             savedMessagesByConversation[conversation.id] = savedMessages;
-            console.log(`✅ Saved ${savedMessages.length} messages for conversation ${conversation.id}`);
+            console.log(
+              `✅ Saved ${savedMessages.length} messages for conversation ${conversation.id}`,
+            );
           } else {
-            console.log(`📭 No messages found for conversation ${conversation.id} (possibly due to 'since' filter: ${since})`);
+            console.log(
+              `📭 No messages found for conversation ${conversation.id} (possibly due to 'since' filter: ${since})`,
+            );
             savedMessagesByConversation[conversation.id] = [];
           }
         } catch (error) {
-          console.error(`❌ Error processing conversation ${conversation.id}:`, error);
+          console.error(
+            `❌ Error processing conversation ${conversation.id}:`,
+            error,
+          );
           // Continue with other conversations
         }
       }
@@ -1649,7 +1699,9 @@ export class FacebookService {
         0,
       );
 
-      console.log(`🎉 Successfully processed ${conversationsData.data.length} conversations and saved ${totalSaved} messages`);
+      console.log(
+        `🎉 Successfully processed ${conversationsData.data.length} conversations and saved ${totalSaved} messages`,
+      );
       return savedMessagesByConversation;
     } catch (error) {
       console.error('❌ Failed to fetch and save page messages:', error);
@@ -1663,20 +1715,24 @@ export class FacebookService {
    * Get conversations with user profiles for a Facebook page
    * This combines conversations and user profile data
    * @param pageId - The Facebook page ID
-   * @param pageAccessToken - Page access token 
+   * @param pageAccessToken - Page access token
    * @param platform - 'messenger' or 'instagram'
    */
   async getPageConversationsWithProfiles(
     pageId: string,
     pageAccessToken: string,
-    platform: 'messenger' | 'instagram' = 'messenger'
+    platform: 'messenger' | 'instagram' = 'messenger',
   ) {
     try {
       console.log(`🔄 Fetching conversations with profiles for page ${pageId}`);
 
       // Get all conversations
-      const conversationsData = await this.getPageConversations(pageId, pageAccessToken, platform);
-      
+      const conversationsData = await this.getPageConversations(
+        pageId,
+        pageAccessToken,
+        platform,
+      );
+
       if (!conversationsData.data || conversationsData.data.length === 0) {
         return { data: [] };
       }
@@ -1689,7 +1745,7 @@ export class FacebookService {
             const messagesData = await this.getConversationMessages(
               conversation.id,
               pageAccessToken,
-              'messages{id,created_time,from,to,message}'
+              'messages{id,created_time,from,to,message}',
             );
 
             // Extract unique user PSIDs from messages
@@ -1704,12 +1760,12 @@ export class FacebookService {
             const userProfiles = await Promise.all(
               Array.from(userPsids).map(async (psid) => {
                 return this.getUserProfile(psid, pageAccessToken);
-              })
+              }),
             );
 
             // Create a profile lookup map
             const profileMap = new Map();
-            userProfiles.forEach(profile => {
+            userProfiles.forEach((profile) => {
               profileMap.set(profile.psid, profile);
             });
 
@@ -1717,28 +1773,33 @@ export class FacebookService {
               ...conversation,
               messages: messagesData.messages?.data || [],
               userProfiles: userProfiles,
-              profileMap: Object.fromEntries(profileMap)
+              profileMap: Object.fromEntries(profileMap),
             };
           } catch (error) {
-            console.error(`❌ Error processing conversation ${conversation.id}:`, error);
+            console.error(
+              `❌ Error processing conversation ${conversation.id}:`,
+              error,
+            );
             return {
               ...conversation,
               messages: [],
               userProfiles: [],
               profileMap: {},
-              error: error.message
+              error: error.message,
             };
           }
-        })
+        }),
       );
 
-      console.log(`✅ Successfully enriched ${enrichedConversations.length} conversations with profiles`);
-      
-      return { 
+      console.log(
+        `✅ Successfully enriched ${enrichedConversations.length} conversations with profiles`,
+      );
+
+      return {
         data: enrichedConversations,
         pageId,
         platform,
-        total: enrichedConversations.length
+        total: enrichedConversations.length,
       };
     } catch (error) {
       console.error('❌ Failed to fetch conversations with profiles:', error);
@@ -1758,19 +1819,21 @@ export class FacebookService {
       totalMessages: messages.length,
       conversationId,
       userId,
-      sampleMessage: messages[0] ? {
-        id: messages[0].id,
-        message: messages[0].message?.substring(0, 50),
-        from: messages[0].from,
-        created_time: messages[0].created_time,
-      } : 'No messages'
+      sampleMessage: messages[0]
+        ? {
+            id: messages[0].id,
+            message: messages[0].message?.substring(0, 50),
+            from: messages[0].from,
+            created_time: messages[0].created_time,
+          }
+        : 'No messages',
     });
-    
+
     if (messages.length === 0) {
       console.log('⚠️ No messages to save');
       return savedMessages;
     }
-    
+
     for (const message of messages) {
       try {
         console.log(`🔍 Processing message: ${message.id}`, {
@@ -1784,7 +1847,7 @@ export class FacebookService {
         const existingMessage = await this.facebookMessageRepository.findOne({
           where: { facebookMessageId: message.id },
         });
-        
+
         if (existingMessage) {
           console.log(`⏭️ Message ${message.id} already exists, skipping...`);
           continue;
@@ -1803,13 +1866,17 @@ export class FacebookService {
           to: message.to || { data: [] },
           // If you have a user relationship, you can set it here
           // user: userId ? { id: userId } : null,
+          create_at: message.created_time,
         });
 
         console.log(`💾 Attempting to save message ${message.id}...`);
-        const savedMessage = await this.facebookMessageRepository.save(fbMessage);
+        const savedMessage =
+          await this.facebookMessageRepository.save(fbMessage);
         savedMessages.push(savedMessage);
 
-        console.log(`✅ Successfully saved message ${message.id} with internal ID: ${savedMessage.id}`);
+        console.log(
+          `✅ Successfully saved message ${message.id} with internal ID: ${savedMessage.id}`,
+        );
       } catch (error) {
         console.error(
           `❌ Failed to save message ${message.id}:`,
@@ -1820,7 +1887,9 @@ export class FacebookService {
       }
     }
 
-    console.log(`🎉 SAVE SUMMARY: Successfully saved ${savedMessages.length} out of ${messages.length} messages`);
+    console.log(
+      `🎉 SAVE SUMMARY: Successfully saved ${savedMessages.length} out of ${messages.length} messages`,
+    );
     return savedMessages;
   }
 
@@ -1839,7 +1908,9 @@ export class FacebookService {
     since?: string,
   ): Promise<FbMessage[]> {
     try {
-      console.log(`💬 Fetching and saving messages for conversation ${conversationId}`);
+      console.log(
+        `💬 Fetching and saving messages for conversation ${conversationId}`,
+      );
 
       // Fetch all messages for this conversation
       const messages = await this.fetchAllConversationMessages(
@@ -1850,7 +1921,9 @@ export class FacebookService {
       );
 
       if (messages.length === 0) {
-        console.log(`📭 No new messages found for conversation ${conversationId}`);
+        console.log(
+          `📭 No new messages found for conversation ${conversationId}`,
+        );
         return [];
       }
 
@@ -1861,10 +1934,15 @@ export class FacebookService {
         userId,
       );
 
-      console.log(`✅ Successfully saved ${savedMessages.length} messages for conversation ${conversationId}`);
+      console.log(
+        `✅ Successfully saved ${savedMessages.length} messages for conversation ${conversationId}`,
+      );
       return savedMessages;
     } catch (error) {
-      console.error(`❌ Failed to fetch and save conversation messages:`, error);
+      console.error(
+        `❌ Failed to fetch and save conversation messages:`,
+        error,
+      );
       throw new BadRequestException(
         `Failed to fetch and save conversation messages: ${error.message}`,
       );
@@ -1898,7 +1976,10 @@ export class FacebookService {
       const conversationMessages = await this.facebookMessageRepository.count({
         where: { conversationId },
       });
-      console.log(`📊 Messages for conversation ${conversationId}:`, conversationMessages);
+      console.log(
+        `📊 Messages for conversation ${conversationId}:`,
+        conversationMessages,
+      );
 
       // Get a sample of all messages to see what conversation IDs exist
       const sampleMessages = await this.facebookMessageRepository.find({
@@ -1907,13 +1988,14 @@ export class FacebookService {
       });
       console.log('🔍 Sample messages in database:', sampleMessages);
 
-      const [messages, total] = await this.facebookMessageRepository.findAndCount({
-        where: { conversationId },
-        order: { create_at: 'DESC' },
-        take: limit,
-        skip: offset,
-        relations: ['user'],
-      });
+      const [messages, total] =
+        await this.facebookMessageRepository.findAndCount({
+          where: { conversationId },
+          order: { create_at: 'DESC' },
+          take: limit,
+          skip: offset,
+          relations: ['user'],
+        });
 
       console.log('🔍 Query result:', {
         foundMessages: messages.length,
@@ -1937,7 +2019,7 @@ export class FacebookService {
     try {
       // Get total count
       const total = await this.facebookMessageRepository.count();
-      
+
       // Get unique conversation IDs
       const conversationIds = await this.facebookMessageRepository
         .createQueryBuilder('message')
@@ -1961,10 +2043,11 @@ export class FacebookService {
       };
     } catch (error) {
       console.error('❌ Failed to get debug info:', error);
-      throw new BadRequestException(`Failed to get debug info: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to get debug info: ${error.message}`,
+      );
     }
   }
- 
 
   // ======================== SOCIAL MESSAGES (COMMENTS) METHODS ========================
 
@@ -2080,9 +2163,7 @@ export class FacebookService {
   /**
    * Find comments by social page
    */
-  async findCommentsBySocialPage(
-    socialPageId: string,
-  ): Promise<FbComment[]> {
+  async findCommentsBySocialPage(socialPageId: string): Promise<FbComment[]> {
     return await this.socialMessageRepository.find({
       where: {
         socialPage: { id: socialPageId },
@@ -2141,7 +2222,7 @@ export class FacebookService {
     return await this.socialMessageRepository.findAndCount({
       skip,
       take: limit,
-      relations: ['socialPage', 'post', 'buyer'],
+      relations: ['socialPage', 'buyer'],
       order: { created_at: 'DESC' },
     });
   }
@@ -2149,9 +2230,7 @@ export class FacebookService {
   /**
    * Find comments by social page ID
    */
-  async findCommentsBySocialPageId(
-    socialPageId: string,
-  ): Promise<FbComment[]> {
+  async findCommentsBySocialPageId(socialPageId: string): Promise<FbComment[]> {
     return await this.socialMessageRepository.find({
       where: { socialPage: { id: socialPageId } },
       relations: ['socialPage', 'post', 'buyer'],
@@ -2159,53 +2238,30 @@ export class FacebookService {
     });
   }
 
+  // Mark comment or chat to is_process = true
   async markAsProcessed(id: string) {
     await this.socialMessageRepository.update(id, { is_processed: true });
   }
 
-  async findUnprocessed() {
-    const messages = await this.socialMessageRepository.find({
+  async markFbMessageAsProcessed(id: string) {
+    await this.facebookMessageRepository.update(id, { is_processed: true });
+  }
+
+  // Find unprocessed comments
+  async findUnprocessedComment(): Promise<FbComment[]> {
+    return await this.socialMessageRepository.find({
+      where: { is_processed: false },
+      relations: ['socialPage', 'buyer'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  // Find unprocessed chats
+  async findUnprocessedChat(): Promise<FbMessage[]> {
+    return await this.facebookMessageRepository.find({
       where: { is_processed: false },
       relations: ['buyer'],
-      order: { created_at: 'ASC' }, // optional: keep chronological order
+      order: { create_at: 'ASC' },
     });
-
-    const grouped = Object.values(
-      messages.reduce(
-        (acc, msg) => {
-          const postId = String(msg.facebook_post_id || 'unknown_post');
-
-          if (!acc[postId]) {
-            acc[postId] = {
-              post_id: postId,
-              messages: [],
-            };
-          }
-
-          acc[postId].messages.push({
-            id: msg.id,
-            buyer_id: String(msg.buyer?.id || '0'),
-            buyer: msg.buyer?.name || 'Unknown Buyer',
-            message_text: msg.message_text,
-          });
-
-          return acc;
-        },
-        {} as Record<
-          string,
-          {
-            post_id: string;
-            messages: {
-              id: string;
-              buyer_id: string;
-              buyer: string;
-              message_text: string;
-            }[];
-          }
-        >,
-      ),
-    );
-
-    return grouped;
   }
 }

@@ -31,12 +31,10 @@ import { UnhandledExceptionLogger } from './common/unhandled-exception.logger';
 @Module({
   imports: [
     CommonModule, // Add security services globally
-    ConfigModule.forRoot(
-      {
-        isGlobal: true,
-        envFilePath: `.env`,
-      }
-    ),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: `.env`,
+    }),
     TypeOrmModule.forRoot(getDatabaseConfig()),
     AuthModule,
     FacebookModule,
@@ -46,7 +44,7 @@ import { UnhandledExceptionLogger } from './common/unhandled-exception.logger';
     TelegrafModule.forRootAsync({
       botName: SHOPPIO_BOT_NAME,
       useFactory: () => ({
-        token: process.env.SHOPPIO_BOT_TOKEN?.toString() || "",
+        token: process.env.SHOPPIO_BOT_TOKEN?.toString() || '',
         middlewares: [telegrafSessionMiddleware],
         include: [TelegramBotModule],
         // options: {
@@ -80,6 +78,11 @@ import { UnhandledExceptionLogger } from './common/unhandled-exception.logger';
   ],
   // imports: [UsersModule, BuyersModule, PagesModule, MessagesModule, AnalyzedMessagesModule, OrdersModule, AuthModule],
   controllers: [AppController],
-  providers: [AppService, GeminiService, AnalyzerService, UnhandledExceptionLogger],
+  providers: [
+    AppService,
+    GeminiService,
+    AnalyzerService,
+    UnhandledExceptionLogger,
+  ],
 })
-export class AppModule { }
+export class AppModule {}

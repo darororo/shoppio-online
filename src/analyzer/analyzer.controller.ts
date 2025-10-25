@@ -14,6 +14,11 @@ export class AnalyzerController {
     return await this.analyzerService.processUnanalyzedData();
   }
 
+  @Post('process/chats')
+  async processUnanalyzedChat() {
+    return await this.analyzerService.processUnanalyzedChat();
+  }
+
   @Post('test')
   async testAnalysis(@Body() body: { message: string }) {
     if (!body.message) {

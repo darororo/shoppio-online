@@ -1,4 +1,5 @@
 import { AnalyzedMessage } from 'src/analyzed_messages/entities/analyzed_message.entity';
+import { Buyer } from 'src/buyers/entities/buyer.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Column,
@@ -21,8 +22,15 @@ export class FbMessage {
   // @Column({ nullable: false })
   // userId: string;
 
+  @Column({ default: false })
+  is_processed: boolean;
+
   @ManyToOne(() => User, (user) => user.fbMessages)
   user: User;
+
+  @ManyToOne(() => Buyer, (buyer) => buyer.fbMessages)
+  buyer: Buyer;
+
   @OneToMany(
     () => AnalyzedMessage,
     (analyzedMessage) => analyzedMessage.message,
@@ -50,7 +58,7 @@ export class FbMessage {
     }[];
   };
 
-  @CreateDateColumn()
+  @Column()
   create_at: Date;
 
   @UpdateDateColumn()

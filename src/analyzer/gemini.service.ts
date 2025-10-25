@@ -64,7 +64,7 @@ Analyze the following customer message and provide a structured response.
   - Always also provide the translation in parentheses:
     + If the original is in Khmer, add the English translation in parentheses.  
     + If the original is in English, add the Khmer translation in parentheses. 
-  - If no product/location is mentioned, return with "Not mentioned".
+  - If no product/location/phone_number is mentioned, return with "Not mentioned".
   - If the product/location cannot be analyzed, return with "Unknown".
   - The location must always include the full phrase exactly as in the message, including prepositions or descriptive parts (e.g., "នៅជិតផ្សារដើមថ្កូវ" stays exactly as is, not shortened).
     However, ignore meta-labels like "location", "address", "place", etc. Keep only the actual place name and its prepositional phrase.
@@ -76,13 +76,14 @@ Analyze the following customer message and provide a structured response.
 - Do **not** treat quantity units (like "ដប"/"bottle", "កំប៉ុង"/"can", "kg", "pack") as products.
 - Do **not** include grammatical particles (e.g., "នេះ", "នោះ", "នឹង") as part of product names.
 - If only a unit and number are given without a product name, set product = "Not mentioned".
+- If the message mentions or requests money, payment, or a cash amount (e.g., “som 1000”, “please send 5000”, “ខ្ញុំចង់បាន 2000រៀល”), this is not a buying intent.
 - "confidence_score" is based on how accurate the analysis you provided is.
 
 Message: "${message}"
 
 Respond ONLY in this strict JSON format:
 {
-  "intent": buy|info|others,
+  "intent": buy|info|others (info = asking for information),
   "product": What the customer wants to buy (with translation in parentheses if applicable),
   "quantity": Amount of product requested, must be a number,
   "location": Customer's location (with translation in parentheses if applicable),
@@ -147,7 +148,7 @@ Respond ONLY in this strict JSON format:
   }
 
   private normalizePhoneNumber(phone: any): string {
-    if (!phone) return 'undetected';
+    // if (!phone) return 'undetected';
     let digits = String(phone).replace(/\D/g, '');
     if (digits.startsWith('885')) {
       digits = '0' + digits.slice(3);
@@ -159,7 +160,7 @@ Respond ONLY in this strict JSON format:
       return digits.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3');
     }
 
-    return 'wrong';
+    return 'Not mentioned';
   }
 
   private fallbackAnalysis(message: string): AnalysisResult {

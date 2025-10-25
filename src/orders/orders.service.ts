@@ -28,15 +28,44 @@ export class OrdersService {
     return orders;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} order`;
+  async findOne(id: string) {
+    const order = await this.orderRepo.findOne({ where: { id } });
+
+    if (!order) {
+      throw new HttpException('Order with ID ${id} is not found', 404);
+    }
+    return order;
   }
 
-  update(id: number, updateOrderDto: UpdateOrderDto) {
-    return `This action updates a #${id} order`;
+  async findByBuyerId(buyerId: string) {
+    const orders = await this.orderRepo.find({ where: { buyId: buyerId } });
+
+    if (!orders) {
+      throw new HttpException('Order with buyerID ${id} is not found', 404);
+    }
+
+    return orders;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} order`;
+  async update(id: string, updateOrderDto: UpdateOrderDto) {
+    const order = await this.orderRepo.findOne({ where: { id } });
+
+    if (!order) {
+      throw new HttpException('Order with ID ${id} is not found', 404);
+    }
+
+    Object.assign(order, updateOrderDto);
+
+    return await this.orderRepo.save(order);
+  }
+
+  async remove(id: string) {
+    const order = await this.orderRepo.findOne({ where: { id } });
+
+    if (!order) {
+      throw new HttpException('Order with ID ${id} is not found', 404);
+    }
+
+    return await this.orderRepo.remove(order);
   }
 }

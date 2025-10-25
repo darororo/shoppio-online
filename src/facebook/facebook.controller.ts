@@ -1,4 +1,15 @@
-import { Controller, Post, Get, Param, Query, Body, UploadedFile, UseInterceptors, BadRequestException, Headers } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Query,
+  Body,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
+  Headers,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FacebookService, FacebookUploadResult } from './facebook.service';
 
@@ -34,12 +45,17 @@ export class FacebookController {
       throw new BadRequestException('App ID is required');
     }
 
-    return this.facebookService.uploadFileToFacebook(file, userAccessToken, appId);
+    return this.facebookService.uploadFileToFacebook(
+      file,
+      userAccessToken,
+      appId,
+    );
   }
 
   @Post('post-photo')
   async postPhoto(
-    @Body() postData: {
+    @Body()
+    postData: {
       pageId: string;
       pageAccessToken: string;
       fileHandle: string;
@@ -54,12 +70,18 @@ export class FacebookController {
       throw new BadRequestException('Missing required fields');
     }
 
-    return this.facebookService.postPhotoWithHandle(pageId, pageAccessToken, fileHandle, options);
+    return this.facebookService.postPhotoWithHandle(
+      pageId,
+      pageAccessToken,
+      fileHandle,
+      options,
+    );
   }
 
   @Post('post-video')
   async postVideo(
-    @Body() postData: {
+    @Body()
+    postData: {
       pageId: string;
       pageAccessToken: string;
       fileHandle: string;
@@ -75,9 +97,16 @@ export class FacebookController {
 
     try {
       // Try posting with file handle first
-      return await this.facebookService.postVideoWithHandle(pageId, pageAccessToken, fileHandle, options);
+      return await this.facebookService.postVideoWithHandle(
+        pageId,
+        pageAccessToken,
+        fileHandle,
+        options,
+      );
     } catch (error) {
-      console.log('File handle method failed, this is expected for videos. File handle method works better for photos.');
+      console.log(
+        'File handle method failed, this is expected for videos. File handle method works better for photos.',
+      );
       throw error; // Re-throw the error since we don't have the original file here
     }
   }
@@ -100,7 +129,12 @@ export class FacebookController {
     }
 
     const options = { title, description };
-    return this.facebookService.postVideoWithDirectUpload(pageId, pageAccessToken, file, options);
+    return this.facebookService.postVideoWithDirectUpload(
+      pageId,
+      pageAccessToken,
+      file,
+      options,
+    );
   }
 
   // 1. Get a List of Conversations
@@ -117,7 +151,12 @@ export class FacebookController {
     }
 
     const limitNum = parseInt(limit, 10);
-    return this.facebookService.fetchPageConversations(pageId, accessToken, platform, limitNum);
+    return this.facebookService.fetchPageConversations(
+      pageId,
+      accessToken,
+      platform,
+      limitNum,
+    );
   }
 
   // 2. Find a Conversation with a Specific User
@@ -130,10 +169,17 @@ export class FacebookController {
     @Query('access_token') accessToken: string,
   ) {
     if (!pageId || !accessToken || !userId) {
-      throw new BadRequestException('Page ID, user_id, and access_token are required');
+      throw new BadRequestException(
+        'Page ID, user_id, and access_token are required',
+      );
     }
 
-    return this.facebookService.findConversationWithUser(pageId, accessToken, userId, platform);
+    return this.facebookService.findConversationWithUser(
+      pageId,
+      accessToken,
+      userId,
+      platform,
+    );
   }
 
   // 3. Get a List of Messages in a Conversation
@@ -146,11 +192,17 @@ export class FacebookController {
     @Query('limit') limit: string = '100',
   ) {
     if (!conversationId || !accessToken) {
-      throw new BadRequestException('Conversation ID and access_token are required');
+      throw new BadRequestException(
+        'Conversation ID and access_token are required',
+      );
     }
 
     const limitNum = parseInt(limit, 10);
-    return this.facebookService.fetchConversationMessages(conversationId, accessToken, limitNum);
+    return this.facebookService.fetchConversationMessages(
+      conversationId,
+      accessToken,
+      limitNum,
+    );
   }
 
   // 4. Get Information about a Message
@@ -165,7 +217,11 @@ export class FacebookController {
       throw new BadRequestException('Message ID and access_token are required');
     }
 
-    return this.facebookService.fetchMessageDetails(messageId, accessToken, fields);
+    return this.facebookService.fetchMessageDetails(
+      messageId,
+      accessToken,
+      fields,
+    );
   }
 
   // 5. Find Page Scope ID (for conversation participants)
@@ -177,10 +233,16 @@ export class FacebookController {
     @Query('access_token') accessToken: string,
   ) {
     if (!conversationId || !accessToken) {
-      throw new BadRequestException('Conversation ID and access_token are required');
+      throw new BadRequestException(
+        'Conversation ID and access_token are required',
+      );
     }
 
-    return this.facebookService.fetchConversationParticipants(conversationId, accessToken, fields);
+    return this.facebookService.fetchConversationParticipants(
+      conversationId,
+      accessToken,
+      fields,
+    );
   }
 
   /**
@@ -197,10 +259,12 @@ export class FacebookController {
       throw new BadRequestException('Page ID and access_token are required');
     }
 
-    return this.facebookService.getPageConversations(pageId, accessToken, platform);
+    return this.facebookService.getPageConversations(
+      pageId,
+      accessToken,
+      platform,
+    );
   }
-
-
 
   /**
    * Get user profile by PSID (Page-Scoped ID)
@@ -209,7 +273,8 @@ export class FacebookController {
   @Get('user/:psid/profile')
   async getUserProfile(
     @Param('psid') psid: string,
-    @Query('fields') fields: string = 'first_name,last_name,profile_pic,locale,timezone,gender',
+    @Query('fields')
+    fields: string = 'first_name,last_name,profile_pic,locale,timezone,gender',
     @Query('access_token') accessToken: string,
   ) {
     if (!psid || !accessToken) {
@@ -234,7 +299,11 @@ export class FacebookController {
       throw new BadRequestException('Page ID and access_token are required');
     }
 
-    return this.facebookService.getPageConversationsWithProfiles(pageId, accessToken, platform);
+    return this.facebookService.getPageConversationsWithProfiles(
+      pageId,
+      accessToken,
+      platform,
+    );
   }
 
   /**
@@ -253,15 +322,22 @@ export class FacebookController {
       accessToken: accessToken ? 'PROVIDED' : 'NOT PROVIDED',
       accessTokenLength: accessToken?.length || 0,
       fetchAll,
-      since
+      since,
     });
 
     if (!conversationId || !accessToken) {
-      throw new BadRequestException('Conversation ID and access_token are required');
+      throw new BadRequestException(
+        'Conversation ID and access_token are required',
+      );
     }
 
     const shouldFetchAll = fetchAll === 'true';
-    return this.facebookService.fetchAllConversationMessages(conversationId, accessToken, shouldFetchAll, since);
+    return this.facebookService.fetchAllConversationMessages(
+      conversationId,
+      accessToken,
+      shouldFetchAll,
+      since,
+    );
   }
 
   // === MESSENGER SEND API ENDPOINTS ===
@@ -272,7 +348,8 @@ export class FacebookController {
    */
   @Post('send/text')
   async sendTextMessage(
-    @Body() messageData: {
+    @Body()
+    messageData: {
       recipientId: string;
       text: string;
       pageAccessToken: string;
@@ -287,10 +364,17 @@ export class FacebookController {
     const { recipientId, text, pageAccessToken, quickReplies } = messageData;
 
     if (!recipientId || !text || !pageAccessToken) {
-      throw new BadRequestException('recipientId, text, and pageAccessToken are required');
+      throw new BadRequestException(
+        'recipientId, text, and pageAccessToken are required',
+      );
     }
 
-    return this.facebookService.sendTextMessage(recipientId, text, pageAccessToken, quickReplies);
+    return this.facebookService.sendTextMessage(
+      recipientId,
+      text,
+      pageAccessToken,
+      quickReplies,
+    );
   }
 
   /**
@@ -299,7 +383,8 @@ export class FacebookController {
    */
   @Post('send/attachment')
   async sendAttachment(
-    @Body() attachmentData: {
+    @Body()
+    attachmentData: {
       recipientId: string;
       attachmentType: 'image' | 'audio' | 'video' | 'file';
       attachmentUrl: string;
@@ -307,13 +392,27 @@ export class FacebookController {
       isReusable?: boolean;
     },
   ) {
-    const { recipientId, attachmentType, attachmentUrl, pageAccessToken, isReusable = false } = attachmentData;
+    const {
+      recipientId,
+      attachmentType,
+      attachmentUrl,
+      pageAccessToken,
+      isReusable = false,
+    } = attachmentData;
 
     if (!recipientId || !attachmentType || !attachmentUrl || !pageAccessToken) {
-      throw new BadRequestException('recipientId, attachmentType, attachmentUrl, and pageAccessToken are required');
+      throw new BadRequestException(
+        'recipientId, attachmentType, attachmentUrl, and pageAccessToken are required',
+      );
     }
 
-    return this.facebookService.sendAttachment(recipientId, attachmentType, attachmentUrl, pageAccessToken, isReusable);
+    return this.facebookService.sendAttachment(
+      recipientId,
+      attachmentType,
+      attachmentUrl,
+      pageAccessToken,
+      isReusable,
+    );
   }
 
   /**
@@ -322,7 +421,8 @@ export class FacebookController {
    */
   @Post('send/template/generic')
   async sendGenericTemplate(
-    @Body() templateData: {
+    @Body()
+    templateData: {
       recipientId: string;
       elements: Array<{
         title: string;
@@ -347,10 +447,16 @@ export class FacebookController {
     const { recipientId, elements, pageAccessToken } = templateData;
 
     if (!recipientId || !elements || !pageAccessToken) {
-      throw new BadRequestException('recipientId, elements, and pageAccessToken are required');
+      throw new BadRequestException(
+        'recipientId, elements, and pageAccessToken are required',
+      );
     }
 
-    return this.facebookService.sendGenericTemplate(recipientId, elements, pageAccessToken);
+    return this.facebookService.sendGenericTemplate(
+      recipientId,
+      elements,
+      pageAccessToken,
+    );
   }
 
   /**
@@ -359,7 +465,8 @@ export class FacebookController {
    */
   @Post('send/template/button')
   async sendButtonTemplate(
-    @Body() templateData: {
+    @Body()
+    templateData: {
       recipientId: string;
       text: string;
       buttons: Array<{
@@ -374,10 +481,17 @@ export class FacebookController {
     const { recipientId, text, buttons, pageAccessToken } = templateData;
 
     if (!recipientId || !text || !buttons || !pageAccessToken) {
-      throw new BadRequestException('recipientId, text, buttons, and pageAccessToken are required');
+      throw new BadRequestException(
+        'recipientId, text, buttons, and pageAccessToken are required',
+      );
     }
 
-    return this.facebookService.sendButtonTemplate(recipientId, text, buttons, pageAccessToken);
+    return this.facebookService.sendButtonTemplate(
+      recipientId,
+      text,
+      buttons,
+      pageAccessToken,
+    );
   }
 
   /**
@@ -386,7 +500,8 @@ export class FacebookController {
    */
   @Post('send/action')
   async sendSenderAction(
-    @Body() actionData: {
+    @Body()
+    actionData: {
       recipientId: string;
       action: 'typing_on' | 'typing_off' | 'mark_seen';
       pageAccessToken: string;
@@ -395,10 +510,16 @@ export class FacebookController {
     const { recipientId, action, pageAccessToken } = actionData;
 
     if (!recipientId || !action || !pageAccessToken) {
-      throw new BadRequestException('recipientId, action, and pageAccessToken are required');
+      throw new BadRequestException(
+        'recipientId, action, and pageAccessToken are required',
+      );
     }
 
-    return this.facebookService.sendSenderAction(recipientId, action, pageAccessToken);
+    return this.facebookService.sendSenderAction(
+      recipientId,
+      action,
+      pageAccessToken,
+    );
   }
 
   /**
@@ -407,27 +528,40 @@ export class FacebookController {
    */
   @Post('send/message')
   async sendMessage(
-    @Body() messageData: {
+    @Body()
+    messageData: {
       recipientId: string;
       message: any;
       pageAccessToken: string;
-      messagingType?: 'RESPONSE' | 'UPDATE' | 'MESSAGE_TAG' | 'NON_PROMOTIONAL_SUBSCRIPTION';
+      messagingType?:
+        | 'RESPONSE'
+        | 'UPDATE'
+        | 'MESSAGE_TAG'
+        | 'NON_PROMOTIONAL_SUBSCRIPTION';
       tag?: string;
     },
   ) {
-    const { 
-      recipientId, 
-      message, 
-      pageAccessToken, 
+    const {
+      recipientId,
+      message,
+      pageAccessToken,
       messagingType = 'RESPONSE',
-      tag 
+      tag,
     } = messageData;
 
     if (!recipientId || !message || !pageAccessToken) {
-      throw new BadRequestException('recipientId, message, and pageAccessToken are required');
+      throw new BadRequestException(
+        'recipientId, message, and pageAccessToken are required',
+      );
     }
 
-    return this.facebookService.sendMessage(recipientId, message, pageAccessToken, messagingType, tag);
+    return this.facebookService.sendMessage(
+      recipientId,
+      message,
+      pageAccessToken,
+      messagingType,
+      tag,
+    );
   }
 
   // ======================== SOCIAL MESSAGES ENDPOINTS ========================
@@ -474,13 +608,12 @@ export class FacebookController {
       console.log(comments);
 
       // Save comments to database
-      const savedMessages =
-        await this.facebookService.saveFacebookComments(
-          comments,
-          socialPageId,
-          postId,
-          internalPostId,
-        );
+      const savedMessages = await this.facebookService.saveFacebookComments(
+        comments,
+        socialPageId,
+        postId,
+        internalPostId,
+      );
 
       return {
         success: true,
@@ -561,12 +694,11 @@ export class FacebookController {
         totalComments += comments.length;
 
         if (comments.length > 0) {
-          const savedMessages =
-            await this.facebookService.saveFacebookComments(
-              comments,
-              socialPageUuid,
-              postData.postId,
-            );
+          const savedMessages = await this.facebookService.saveFacebookComments(
+            comments,
+            socialPageUuid,
+            postData.postId,
+          );
           totalSaved += savedMessages.length;
         }
       }
@@ -599,9 +731,7 @@ export class FacebookController {
   ) {
     try {
       const comments =
-        await this.facebookService.findCommentsByFacebookPostId(
-          facebookPostId,
-        );
+        await this.facebookService.findCommentsByFacebookPostId(facebookPostId);
 
       return {
         success: true,
@@ -694,9 +824,7 @@ export class FacebookController {
   async getCommentsByPage(@Param('socialPageId') socialPageId: string) {
     try {
       const comments =
-        await this.facebookService.findCommentsBySocialPageId(
-          socialPageId,
-        );
+        await this.facebookService.findCommentsBySocialPageId(socialPageId);
 
       return {
         success: true,
@@ -723,9 +851,70 @@ export class FacebookController {
     }
   }
 
-  @Get('unprocessed')
-  async findUnprocessed() {
-    return this.facebookService.findUnprocessed();
+  @Get('unprocessedComment')
+  async findUnprocessedComment() {
+    try {
+      const comments = await this.facebookService.findUnprocessedComment();
+
+      return {
+        success: true,
+        data: {
+          comments: comments.map((comment) => ({
+            id: comment.id,
+            facebook_comment_id: comment.facebook_comment_id,
+            facebook_post_id: comment.facebook_post_id,
+            parent_comment_id: comment.parent_comment_id,
+            message_text: comment.message_text,
+            sender_id: comment.sender_id,
+            sender_name: comment.sender_name,
+            received_at: comment.received_at.toLocaleString('en-US', {
+              timeZone: 'Asia/Phnom_Penh',
+            }),
+            created_at: comment.created_at.toLocaleString('en-US', {
+              timeZone: 'Asia/Phnom_Penh',
+            }),
+            message_type: comment.message_type,
+          })),
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to get comments: ${error.message}`,
+        error: error.message,
+      };
+    }
+  }
+
+  @Get('unprocessedChat')
+  async findUnprocessedChat() {
+    try {
+      const chats = await this.facebookService.findUnprocessedChat();
+
+      return {
+        success: true,
+        data: {
+          chats: chats.map((chat) => ({
+            id: chat.id,
+            conversationId: chat.conversationId,
+            facebookMessageId: chat.facebookMessageId,
+            message: chat.message,
+            from: chat.from,
+            to: chat.to,
+            create_time: chat.create_at.toLocaleDateString('en-US', {
+              timeZone: 'Asia/Phnom_Penh',
+            }),
+            // user: chat.user,
+          })),
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to get saved messages: ${error.message}`,
+        error: error.message,
+      };
+    }
   }
 
   /**
@@ -733,7 +922,8 @@ export class FacebookController {
    */
   @Post('fetch-and-save-page-messages')
   async fetchAndSavePageMessages(
-    @Body() requestData: {
+    @Body()
+    requestData: {
       pageId: string;
       pageAccessToken: string;
       platform?: 'messenger' | 'instagram';
@@ -751,16 +941,19 @@ export class FacebookController {
       } = requestData;
 
       if (!pageId || !pageAccessToken) {
-        throw new BadRequestException('pageId and pageAccessToken are required');
+        throw new BadRequestException(
+          'pageId and pageAccessToken are required',
+        );
       }
 
-      const savedMessages = await this.facebookService.fetchAndSaveAllPageMessages(
-        pageId,
-        pageAccessToken,
-        platform,
-        userId,
-        since,
-      );
+      const savedMessages =
+        await this.facebookService.fetchAndSaveAllPageMessages(
+          pageId,
+          pageAccessToken,
+          platform,
+          userId,
+          since,
+        );
 
       const totalSaved = Object.values(savedMessages).reduce(
         (sum, messages) => sum + messages.length,
@@ -774,10 +967,13 @@ export class FacebookController {
           platform,
           conversationsProcessed: Object.keys(savedMessages).length,
           totalMessagesSaved: totalSaved,
-          messagesByConversation: Object.keys(savedMessages).reduce((acc, conversationId) => {
-            acc[conversationId] = savedMessages[conversationId].length;
-            return acc;
-          }, {} as { [key: string]: number }),
+          messagesByConversation: Object.keys(savedMessages).reduce(
+            (acc, conversationId) => {
+              acc[conversationId] = savedMessages[conversationId].length;
+              return acc;
+            },
+            {} as { [key: string]: number },
+          ),
           since,
         },
       };
@@ -795,7 +991,8 @@ export class FacebookController {
    */
   @Post('fetch-and-save-conversation-messages')
   async fetchAndSaveConversationMessages(
-    @Body() requestData: {
+    @Body()
+    requestData: {
       conversationId: string;
       pageAccessToken: string;
       userId?: string;
@@ -806,15 +1003,18 @@ export class FacebookController {
       const { conversationId, pageAccessToken, userId, since } = requestData;
 
       if (!conversationId || !pageAccessToken) {
-        throw new BadRequestException('conversationId and pageAccessToken are required');
+        throw new BadRequestException(
+          'conversationId and pageAccessToken are required',
+        );
       }
 
-      const savedMessages = await this.facebookService.fetchAndSaveConversationMessages(
-        conversationId,
-        pageAccessToken,
-        userId,
-        since,
-      );
+      const savedMessages =
+        await this.facebookService.fetchAndSaveConversationMessages(
+          conversationId,
+          pageAccessToken,
+          userId,
+          since,
+        );
 
       return {
         success: true,

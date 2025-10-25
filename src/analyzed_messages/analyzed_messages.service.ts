@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAnalyzedMessageDto } from './dto/create-analyzed_message.dto';
 import { UpdateAnalyzedMessageDto } from './dto/update-analyzed_message.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -51,6 +51,14 @@ export class AnalyzedMessagesService {
     return newData;
   }
 
+  async findByBuyerId(buyerId: string) {
+    const newData = await this.analyzedRepo.find({
+      where: { buyerId: buyerId },
+    });
+
+    return newData;
+  }
+
   async update(
     id: string,
     updateAnalyzedMessageDto: UpdateAnalyzedMessageDto,
@@ -65,7 +73,13 @@ export class AnalyzedMessagesService {
     return await this.analyzedRepo.save(newData);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} analyzedMessage`;
+  async remove(id: string) {
+    const newData = await this.analyzedRepo.findOne({ where: { id } });
+
+    if (!newData) {
+      throw new HttpException('Analyzed Data with id ${id} is found', 404);
+    }
+
+    return await this.analyzedRepo.remove(newData);
   }
 }

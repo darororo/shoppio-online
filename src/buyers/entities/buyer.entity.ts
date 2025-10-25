@@ -1,3 +1,4 @@
+import { FbMessage } from 'src/facebook_message/entities/facebook_message.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { FbComment } from 'src/fb_comment/entities/fb_comment.entity';
 import {
@@ -31,6 +32,9 @@ export class Buyer {
 
   @OneToMany(() => FbComment, (fbComment) => fbComment.buyer)
   socialMessages: FbComment[];
+
+  @OneToMany(() => FbMessage, (fbMessages) => fbMessages.buyer)
+  fbMessages: FbMessage[];
 
   @OneToMany(() => Order, (order) => order.buyer)
   order: Order[];
