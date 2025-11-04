@@ -281,13 +281,26 @@ export class TelegramBotService {
 
   async saveChat(chat: CreateTelegramChatDto) {
     try {
-      const result = await this.chatRepo.save(chat);
+      // Ensure chatId is stored as string
+      const chatToSave = {
+        ...chat,
+        chatId: chat.chatId.toString(),
+        botId: chat.botId.toString()
+      };
+      
+      const result = await this.chatRepo.save(chatToSave);
+      console.log('💾 Chat saved to database:', {
+        chatId: result.chatId,
+        title: result.title,
+        type: result.type
+      });
+      
       return {
         ok: true,
         result: result
       }
     } catch (e) {
-      console.error('Error saving chat:', e);
+      console.error('❌ Error saving chat:', e);
       return {
         ok: false,
         error: e instanceof Error ? e.message : 'Unknown error occurred',
@@ -297,13 +310,24 @@ export class TelegramBotService {
 
   async deleteChat(chat: CreateTelegramChatDto) {
     try {
-      const result = await this.chatRepo.delete(chat);
+      const chatToDelete = {
+        chatId: chat.chatId.toString(),
+        botId: chat.botId.toString()
+      };
+      
+      const result = await this.chatRepo.delete(chatToDelete);
+      console.log('🗑️ Chat deleted from database:', {
+        chatId: chat.chatId,
+        title: chat.title,
+        affected: result.affected
+      });
+      
       return {
         ok: true,
         result: result
       }
     } catch (e) {
-      console.error('Error deleting chat:', e);
+      console.error('❌ Error deleting chat:', e);
       return {
         ok: false,
         error: e instanceof Error ? e.message : 'Unknown error occurred',

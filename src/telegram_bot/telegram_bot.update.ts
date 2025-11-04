@@ -127,61 +127,122 @@ export class TelegramBotUpdate {
 
 
 
-    @On("new_chat_members")
-    async onAddedToChat(@Ctx() ctx: Context) {
+    // Proper handler for when bot's membership status changes
+    @On("my_chat_member")
+    async onMyChatMemberUpdate(@Ctx() ctx: Context) {
         try {
-            console.log('I AM ADDED')
-            const chat = await ctx.getChat();
-            const type = chat.type;
-            const id = chat.id;
-            const chatId = chat.id;
+            const update = ctx.update as any;
+            const oldStatus = update.my_chat_member?.old_chat_member?.status;
+            const newStatus = update.my_chat_member?.new_chat_member?.status;
+            
+            const chat = update.my_chat_member?.chat;
+            if (!chat) return;
+
             const botId = (await ctx.telegram.getMe()).id.toString();
+            
+            // Determine proper chat title
+            const title = chat.title || 
+                         (chat.first_name ? `${chat.first_name} ${chat.last_name || ''}`.trim() : 'Private Chat');
+            
+            // Bot was added to chat (became member or admin)
+            if ((oldStatus === 'left' || oldStatus === 'kicked') && 
+                (newStatus === 'member' || newStatus === 'administrator')) {
+                
+                await this.botService.saveChat({
+                    chatId: chat.id.toString(),
+                    botId: botId,
+                    title: title,
+                    type: chat.type,
+                });
+                
+                console.log(`✅ Bot added to chat: ${chat.id} (${title}) - Type: ${chat.type}`);
+                
+                // Send welcome message
+                await ctx.reply('👋 Hello! I\'m now ready to help in this chat!');
+            }
+            
+            // Bot was removed from chat (left or kicked)
+            else if ((newStatus === 'left' || newStatus === 'kicked') && 
+                     (oldStatus === 'member' || oldStatus === 'administrator')) {
+                
+                await this.botService.deleteChat({
+                    chatId: chat.id.toString(),
+                    botId: botId,
+                    title: title,
+                    type: chat.type,
+                });
+                
+                console.log(`❌ Bot removed from chat: ${chat.id} (${title})`);
+            }
+            
+            // Bot became admin
+            else if (oldStatus === 'member' && newStatus === 'administrator') {
+                console.log(`⭐ Bot promoted to admin in chat: ${chat.id} (${title})`);
+            }
+            
+        } catch (e) {
+            console.error('Error handling my_chat_member update:', e);
+        }
+    }
 
-            const result = await this.botService.saveChat({
-                chatId: chatId,
-                botId: botId,
-                title: chat.title,
-                type: type,
-            });
+    // Fallback handler for when other members join (kept for compatibility)
+    @On("new_chat_members")
+    async onNewChatMembers(@Ctx() ctx: Context) {
+        try {
+            const message = ctx.message as any;
+            const newMembers = message?.new_chat_members || [];
+            const botId = (await ctx.telegram.getMe()).id;
+            
+            // Check if the bot itself was added
+            const botAdded = newMembers.some((member: any) => member.id === botId);
+            
+            if (botAdded) {
+                console.log('🤖 Bot detected in new_chat_members (backup handler)');
+                const chat = await ctx.getChat();
+                const botIdStr = botId.toString();
+                
+                const title = chat.title || 
+                             (chat.first_name ? `${chat.first_name} ${chat.last_name || ''}`.trim() : 'Private Chat');
 
-            console.log("I AM ADDED TO A NEW CHAT")
-            console.log(ctx)
-            console.log((await ctx.getChat()).id)
-            return "BONJOUR"
+                await this.botService.saveChat({
+                    chatId: chat.id.toString(),
+                    botId: botIdStr,
+                    title: title,
+                    type: chat.type,
+                });
+            }
 
         } catch (e) {
-            console.error(e)
-            return "nuh uh";
+            console.error('Error in new_chat_members handler:', e);
         }
-
     }
 
     @On("left_chat_member")
-    async onAddedToChat(@Ctx() ctx: Context) {
+    async onLeftChatMember(@Ctx() ctx: Context) {
         try {
-            console.log('I AM REMOVED')
-            const chat = await ctx.getChat();
-            const type = chat.type;
-            const id = chat.id;
-            const chatId = chat.id;
-            const botId = (await ctx.telegram.getMe()).id.toString();
+            const message = ctx.message as any;
+            const leftMember = message?.left_chat_member;
+            const botId = (await ctx.telegram.getMe()).id;
+            
+            // Check if the bot itself was removed
+            if (leftMember && leftMember.id === botId) {
+                console.log('🤖 Bot detected in left_chat_member (backup handler)');
+                const chat = await ctx.getChat();
+                const botIdStr = botId.toString();
+                
+                const title = chat.title || 
+                             (chat.first_name ? `${chat.first_name} ${chat.last_name || ''}`.trim() : 'Private Chat');
 
-            const result = await this.botService.deleteChat({
-                chatId: chatId,
-                botId: botId,
-                title: chat.title,
-                type: type,
-            });
-
-            console.log("I AM DELETED FROM CHAT")
-            console.log(ctx)
-            console.log((await ctx.getChat()).id)
-            return "BONJOUR"
+                await this.botService.deleteChat({
+                    chatId: chat.id.toString(),
+                    botId: botIdStr,
+                    title: title,
+                    type: chat.type,
+                });
+            }
 
         } catch (e) {
-            console.error(e)
-            return "nuh uh";
+            console.error('Error in left_chat_member handler:', e);
         }
-
     }
 }
