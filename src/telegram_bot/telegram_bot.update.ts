@@ -67,18 +67,26 @@ export class TelegramBotUpdate {
     @Command("enableai")
     async onEnableAi(@Ctx() ctx: Context) {
         console.log('ENABLE AI')
+
         const bot = await ctx.telegram.getMe();
-        const botId = bot.id;
-        await this.botService.enableAi(botId);
+        const botId = bot.id.toString();
+
+        const chat = await ctx.getChat();
+        const chatId = chat.id;
+
+        await this.botService.enableAi(botId, chatId);
         return "AI Mode ON";
     };
 
     @Command("disableai")
     async onDisableAi(@Ctx() ctx: Context) {
-        const bot = await ctx.telegram.getMe();
-        const botId = bot.id;
-        await this.botService.disableAi(botId);
+        const chat = await ctx.getChat();
+        const chatId = chat.id;
 
+        const bot = await ctx.telegram.getMe();
+        const botId = bot.id.toString();
+
+        await this.botService.disableAi(botId, chatId);
         return "AI Mode OFF"
     };
 
@@ -88,19 +96,24 @@ export class TelegramBotUpdate {
         @Ctx() ctx: Context,
         @Next() next: Function,
         @UpdateType() updateType: TelegrafUpdateType,
-        @Sender('first_name') firstName: string,
-        @Sender('last_name') lastName: string,
+        @Sender('username') username: string,
     ) {
         if (ctx.message.text.startsWith("/")) return next();
         const bot = await ctx.telegram.getMe();
-        const botId = bot.id;
-        const aiEnabled = await this.botService.isSettingEnabled(botId, BOT_AI);
-        if (!aiEnabled) return "AI IS DEAD"
+        const botId = bot.id.toString();
+
+        const update = await ctx.update;
+
+        const chat = await ctx.getChat();
+        const chatId = chat.id.toString()
+        const aiEnabled = await this.botService.isSettingEnabled(botId, chatId, BOT_AI);
+        // if ai mode is off, don't respond
+        if (!aiEnabled) return;
 
         const text = ctx.text
         const result = await this.ollama.sendPrompt(text || 'hello');
         console.log(result)
-        return `Hey ${firstName} ${lastName} ${result}`;
+        return `@${username} ${result}`;
     }
 
 
@@ -134,52 +147,52 @@ export class TelegramBotUpdate {
             const update = ctx.update as any;
             const oldStatus = update.my_chat_member?.old_chat_member?.status;
             const newStatus = update.my_chat_member?.new_chat_member?.status;
-            
+
             const chat = update.my_chat_member?.chat;
             if (!chat) return;
 
             const botId = (await ctx.telegram.getMe()).id.toString();
-            
+
             // Determine proper chat title
-            const title = chat.title || 
-                         (chat.first_name ? `${chat.first_name} ${chat.last_name || ''}`.trim() : 'Private Chat');
-            
+            const title = chat.title ||
+                (chat.first_name ? `${chat.first_name} ${chat.last_name || ''}`.trim() : 'Private Chat');
+
             // Bot was added to chat (became member or admin)
-            if ((oldStatus === 'left' || oldStatus === 'kicked') && 
+            if ((oldStatus === 'left' || oldStatus === 'kicked') &&
                 (newStatus === 'member' || newStatus === 'administrator')) {
-                
+
                 await this.botService.saveChat({
                     chatId: chat.id.toString(),
                     botId: botId,
                     title: title,
                     type: chat.type,
                 });
-                
+
                 console.log(`✅ Bot added to chat: ${chat.id} (${title}) - Type: ${chat.type}`);
-                
+
                 // Send welcome message
                 await ctx.reply('👋 Hello! I\'m now ready to help in this chat!');
             }
-            
+
             // Bot was removed from chat (left or kicked)
-            else if ((newStatus === 'left' || newStatus === 'kicked') && 
-                     (oldStatus === 'member' || oldStatus === 'administrator')) {
-                
+            else if ((newStatus === 'left' || newStatus === 'kicked') &&
+                (oldStatus === 'member' || oldStatus === 'administrator')) {
+
                 await this.botService.deleteChat({
                     chatId: chat.id.toString(),
                     botId: botId,
                     title: title,
                     type: chat.type,
                 });
-                
+
                 console.log(`❌ Bot removed from chat: ${chat.id} (${title})`);
             }
-            
+
             // Bot became admin
             else if (oldStatus === 'member' && newStatus === 'administrator') {
                 console.log(`⭐ Bot promoted to admin in chat: ${chat.id} (${title})`);
             }
-            
+
         } catch (e) {
             console.error('Error handling my_chat_member update:', e);
         }
@@ -192,17 +205,17 @@ export class TelegramBotUpdate {
             const message = ctx.message as any;
             const newMembers = message?.new_chat_members || [];
             const botId = (await ctx.telegram.getMe()).id;
-            
+
             // Check if the bot itself was added
             const botAdded = newMembers.some((member: any) => member.id === botId);
-            
+
             if (botAdded) {
                 console.log('🤖 Bot detected in new_chat_members (backup handler)');
                 const chat = await ctx.getChat();
                 const botIdStr = botId.toString();
-                
-                const title = chat.title || 
-                             (chat.first_name ? `${chat.first_name} ${chat.last_name || ''}`.trim() : 'Private Chat');
+
+                const title = chat.title ||
+                    (chat.first_name ? `${chat.first_name} ${chat.last_name || ''}`.trim() : 'Private Chat');
 
                 await this.botService.saveChat({
                     chatId: chat.id.toString(),
@@ -223,15 +236,15 @@ export class TelegramBotUpdate {
             const message = ctx.message as any;
             const leftMember = message?.left_chat_member;
             const botId = (await ctx.telegram.getMe()).id;
-            
+
             // Check if the bot itself was removed
             if (leftMember && leftMember.id === botId) {
                 console.log('🤖 Bot detected in left_chat_member (backup handler)');
                 const chat = await ctx.getChat();
                 const botIdStr = botId.toString();
-                
-                const title = chat.title || 
-                             (chat.first_name ? `${chat.first_name} ${chat.last_name || ''}`.trim() : 'Private Chat');
+
+                const title = chat.title ||
+                    (chat.first_name ? `${chat.first_name} ${chat.last_name || ''}`.trim() : 'Private Chat');
 
                 await this.botService.deleteChat({
                     chatId: chat.id.toString(),

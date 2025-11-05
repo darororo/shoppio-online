@@ -13,4 +13,7 @@ export class TelegramBotSettingEntity {
 
     @Column()
     botId: string;
+
+    @Column()
+    chatId: string;
 }

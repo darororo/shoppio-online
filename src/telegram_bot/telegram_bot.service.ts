@@ -65,11 +65,11 @@ export class TelegramBotService {
     }
   }
 
-  async enableAi(botId: string) {
+  async enableAi(botId: string, chatId: string) {
     try {
-      let setting = await this.getSetting(botId, BOT_AI)
+      let setting = await this.getSetting(botId, chatId, BOT_AI)
       if (!setting) {
-        setting = { setting: BOT_AI, botId: botId }
+        setting = { setting: BOT_AI, botId: botId, chatId: chatId }
       }
       setting = { ...setting, state: true }
       const result = await this.settingRepo.save(setting);
@@ -80,11 +80,11 @@ export class TelegramBotService {
     }
   }
 
-  async disableAi(botId: string) {
+  async disableAi(botId: string, chatId: string) {
     try {
-      let setting = await this.getSetting(botId, BOT_AI)
+      let setting = await this.getSetting(botId, chatId, BOT_AI)
       if (!setting) {
-        setting = { setting: BOT_AI, botId: botId }
+        setting = { setting: BOT_AI, botId: botId, chatId: chatId }
       }
       setting = { ...setting, state: false }
       const result = await this.settingRepo.save(setting);
@@ -95,27 +95,27 @@ export class TelegramBotService {
     }
   }
 
-  async getSettings(botId: string) {
+  async getSettings(botId: string, chatId: string) {
     try {
-      const result = await this.settingRepo.find({ where: { botId: botId } });
+      const result = await this.settingRepo.find({ where: { botId: botId, chatId: chatId } });
       return result
     } catch (e) {
       return {};
     }
   }
 
-  async getSetting(botId: string, setting: string) {
+  async getSetting(botId: string, chatId: string, setting: string) {
     try {
-      const result = await this.settingRepo.findOne({ where: { botId: botId, setting: setting } });
+      const result = await this.settingRepo.findOne({ where: { botId: botId, setting: setting, chatId: chatId } });
       return result
     } catch (e) {
       return {};
     }
   }
 
-  async isSettingEnabled(botId: string, setting: string) {
+  async isSettingEnabled(botId: string, chatId: string, setting: string) {
     try {
-      const result = await this.settingRepo.findOne({ where: { botId: botId, setting: setting } });
+      const result = await this.settingRepo.findOne({ where: { botId: botId, setting: setting, chatId: chatId } });
       return result?.state ?? false;
     } catch (e) {
       return false;
@@ -287,14 +287,14 @@ export class TelegramBotService {
         chatId: chat.chatId.toString(),
         botId: chat.botId.toString()
       };
-      
+
       const result = await this.chatRepo.save(chatToSave);
       console.log('💾 Chat saved to database:', {
         chatId: result.chatId,
         title: result.title,
         type: result.type
       });
-      
+
       return {
         ok: true,
         result: result
@@ -314,14 +314,14 @@ export class TelegramBotService {
         chatId: chat.chatId.toString(),
         botId: chat.botId.toString()
       };
-      
+
       const result = await this.chatRepo.delete(chatToDelete);
       console.log('🗑️ Chat deleted from database:', {
         chatId: chat.chatId,
         title: chat.title,
         affected: result.affected
       });
-      
+
       return {
         ok: true,
         result: result
