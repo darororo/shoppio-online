@@ -27,6 +27,7 @@ import { telegrafSessionMiddleware } from 'middleware/telegraf-session.middlewar
 import { SHOPPIO_BOT_NAME } from './telegram_bot/telegram_bot.constants';
 import { OllamaAiModule } from './ollama_ai/ollama_ai.module';
 import { UnhandledExceptionLogger } from './common/unhandled-exception.logger';
+import { ScheduleModule } from '@nestjs/schedule'
 
 @Module({
   imports: [
@@ -36,6 +37,8 @@ import { UnhandledExceptionLogger } from './common/unhandled-exception.logger';
       envFilePath: `.env`,
     }),
     TypeOrmModule.forRoot(getDatabaseConfig()),
+    ScheduleModule.forRoot(),
+
     AuthModule,
     FacebookModule,
     AnalyzerModule,
@@ -85,4 +88,4 @@ import { UnhandledExceptionLogger } from './common/unhandled-exception.logger';
     UnhandledExceptionLogger,
   ],
 })
-export class AppModule {}
+export class AppModule { }

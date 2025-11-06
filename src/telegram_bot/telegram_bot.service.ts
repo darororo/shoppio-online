@@ -12,6 +12,7 @@ import { CreateTelegramChatDto } from './dto/create-telegram-chat.dto';
 import { Message as OllamaMessage } from 'ollama';
 import { OLLAMA_SERVICE } from 'src/ollama_ai/ollama_ai.constants';
 import { OllamaAiService } from 'src/ollama_ai/ollama_ai.service';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class TelegramBotService {
@@ -414,5 +415,13 @@ export class TelegramBotService {
     return result;
   }
 
-
+  @Cron('*/10 * * * *')
+  async clearChatHistories() {
+    try {
+      this.chatHistories.clear();
+      console.log('Chat histories cleared successfully');
+    } catch (error) {
+      console.error('Failed to clear chat histories:', error);
+    }
+  }
 }
