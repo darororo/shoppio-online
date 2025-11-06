@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { TelegramBotEntity } from './entities/telegram_bot.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,9 +9,14 @@ import { BOT_AI, SHOPPIO_BOT_NAME } from './telegram_bot.constants';
 import { Ctx, InjectBot } from 'nestjs-telegraf';
 import { TelegramChatEntity } from './entities/telegram_chat.entity';
 import { CreateTelegramChatDto } from './dto/create-telegram-chat.dto';
+import { Message as OllamaMessage } from 'ollama';
+import { OLLAMA_SERVICE } from 'src/ollama_ai/ollama_ai.constants';
+import { OllamaAiService } from 'src/ollama_ai/ollama_ai.service';
 
 @Injectable()
 export class TelegramBotService {
+  private chatHistories: Map<string, OllamaMessage[]> = new Map();
+
   constructor(
     @InjectRepository(TelegramBotEntity)
     private readonly botRepo: Repository<TelegramBotEntity>,
@@ -20,6 +25,9 @@ export class TelegramBotService {
     @InjectRepository(TelegramBotSettingEntity)
     private readonly settingRepo: Repository<TelegramBotSettingEntity>,
     @InjectBot(SHOPPIO_BOT_NAME) private readonly bot: Telegraf<Context>,
+
+    @Inject(OLLAMA_SERVICE)
+    private readonly ollama: OllamaAiService,
   ) { }
 
   create() {
@@ -80,7 +88,7 @@ export class TelegramBotService {
     }
   }
 
-  async disableAi(botId: string, chatId: string) {
+  async disableAi(botId: string, chatId: string, username: string) {
     try {
       let setting = await this.getSetting(botId, chatId, BOT_AI)
       if (!setting) {
@@ -92,6 +100,9 @@ export class TelegramBotService {
 
     } catch (e) {
       console.error(e)
+    } finally {
+      const historyId = `${chatId}-${username}`;
+      this.chatHistories.delete(historyId);
     }
   }
 
@@ -371,6 +382,36 @@ export class TelegramBotService {
         error: (e as Error).message,
       };
     }
+  }
+
+  async sendPromptWithContext(chatId: string, username: string, message: string) {
+    const historyId = `${chatId}-${username}`
+    if (!this.chatHistories.has(historyId)) {
+      this.chatHistories.set(historyId, []);
+    }
+
+    const context = this.chatHistories.get(historyId) ?? [];
+
+    // trim history to last 20 messages
+    if (context.length > 10) {
+      context.splice(0, context.length - 20);
+    }
+
+    context.push({ role: "user", content: message });
+
+    // Call Ollama safely
+    let result: string;
+    try {
+      result = await this.ollama.sendPromptWithContext(context);
+    } catch (err) {
+      console.error("Ollama error:", err);
+      result = "Sorry, something went wrong!";
+    }
+    context.push({ role: "assistant", content: result })
+
+    console.log(context);
+
+    return result;
   }
 
 

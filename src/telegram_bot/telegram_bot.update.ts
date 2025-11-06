@@ -16,6 +16,7 @@ import { TelegramChatEntity } from './entities/telegram_chat.entity';
 import { Repository } from 'typeorm';
 import { ChatFromGetChat } from 'node_modules/telegraf/typings/core/types/typegram';
 import { TelegramBotEntity } from './entities/telegram_bot.entity';
+import { Message as OllamaMessage } from 'ollama';
 
 
 const notCommandRegex = /\b(?!\/)\w+\b/g;
@@ -23,6 +24,7 @@ const wordsRegex = /\w+/g
 
 @Update()
 export class TelegramBotUpdate {
+
     constructor(
         @Inject(OLLAMA_SERVICE)
         private readonly ollama: OllamaAiService,
@@ -79,15 +81,15 @@ export class TelegramBotUpdate {
     };
 
     @Command("disableai")
-    async onDisableAi(@Ctx() ctx: Context) {
+    async onDisableAi(@Ctx() ctx: Context, @Sender('username') username: string) {
         const chat = await ctx.getChat();
         const chatId = chat.id;
 
         const bot = await ctx.telegram.getMe();
         const botId = bot.id.toString();
 
-        await this.botService.disableAi(botId, chatId);
-        return "AI Mode OFF"
+        await this.botService.disableAi(botId, chatId, username);
+        return "AI Mode OFF. Your conversation is cleared!"
     };
 
 
@@ -111,7 +113,8 @@ export class TelegramBotUpdate {
         if (!aiEnabled) return;
 
         const text = ctx.text
-        const result = await this.ollama.sendPrompt(text || 'hello');
+        // const result = await this.ollama.sendPrompt(text || 'hello');
+        const result = await this.botService.sendPromptWithContext(chatId, username, text);
         console.log(result)
         return `@${username} ${result}`;
     }

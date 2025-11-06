@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Ollama } from 'ollama'
+import { Message as OllamaMessage, Ollama } from 'ollama'
 import { OllamaAiOptions } from './ollama_ai.module';
 @Injectable()
 export class OllamaAiService {
@@ -20,11 +20,28 @@ export class OllamaAiService {
   }
 
   async sendPrompt(prompt: string) {
-    const system = { role: 'system', content: "You are a helpful shop assistant. Please keep your response short and helpful." }
+    const system = { role: 'system', content: "You are a helpful shop assistant who sells music related stuff. Please keep your response short and helpful. DO NOT response to anything not related to music." }
     const message = { role: 'user', content: prompt }
     const response = await this.ollama.chat({
       model: this.options.model,
       messages: [system, message],
+      think: false,
+      stream: false,
+    })
+
+    const content = response.message.content
+
+    console.log(response);
+
+    return content;
+  }
+
+  async sendPromptWithContext(messages: OllamaMessage[]) {
+    const system = { role: 'system', content: "You are a helpful shop assistant who sells music related stuff. Please keep your response short and helpful. DO NOT response to anything not related to music." }
+
+    const response = await this.ollama.chat({
+      model: this.options.model,
+      messages: [system, ...messages],
       think: false,
       stream: false,
     })
