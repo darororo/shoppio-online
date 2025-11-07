@@ -65,6 +65,7 @@ import { ScheduleModule } from '@nestjs/schedule'
       host: process.env.OLLAMA_HOST || '',
       model: process.env.OLLAMA_MODEL || '',
       apiKey: process.env.OLLAMA_API_KEY || '',
+      systemPrompt: process.env.OLLAMA_SYSTEM_PROMPT || '',
     }),
     TelegramBotModule,
     // SocialAccountModule,

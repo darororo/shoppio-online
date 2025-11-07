@@ -7,6 +7,7 @@ export interface OllamaAiOptions {
   host: string;
   model: string;
   apiKey: string;
+  systemPrompt: string;
 }
 
 @Module({

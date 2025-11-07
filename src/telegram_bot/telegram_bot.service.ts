@@ -404,11 +404,11 @@ export class TelegramBotService {
     let result: string;
     try {
       result = await this.ollama.sendPromptWithContext(context);
+      context.push({ role: "assistant", content: result })
     } catch (err) {
       console.error("Ollama error:", err);
       result = "Sorry, something went wrong!";
     }
-    context.push({ role: "assistant", content: result })
 
     console.log(context);
 
