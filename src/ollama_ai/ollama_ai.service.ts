@@ -48,9 +48,24 @@ export class OllamaAiService {
       stream: false,
     })
 
+    const safetyResult = await this.safetyService.chat({
+      model: this.safetyModel,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    })
+
+    const isSafe = String(safetyResult.message.content)
+    if (isSafe.includes('unsafe')) {
+      return 'I am sorry. I can\'t respond to your command.'
+    }
+
     const content = response.message.content
 
-    console.log(response)
+    // console.log(response)
 
     return content
   }
@@ -65,14 +80,31 @@ export class OllamaAiService {
       stream: false,
     })
 
-    // const safety = await this.safetyService.chat({
-    //   model: this.safetyModel,
-    //   messages: [system, response]
-    // })
+    const userInput = messages[messages.length - 1]
+    // const modelOutput = response.message
+
+    const safetyResult = await this.safetyService.chat({
+      model: this.safetyModel,
+      messages: [
+        userInput,
+        // modelOutput,
+      ],
+    })
+
+    const isSafe = String(safetyResult.message.content)
+    if (isSafe.includes('unsafe')) {
+      return 'I am sorry. I can\'t respond to your command.'
+    }
 
     const content = response.message.content
 
-    console.log(response)
+    // console.log('user input')
+    // console.log(userInput)
+    // console.log('ollama response')
+    // console.log(response)
+
+    // console.log('validator response')
+    // console.log(safety)
 
     return content
   }
