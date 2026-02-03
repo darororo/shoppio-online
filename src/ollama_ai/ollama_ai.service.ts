@@ -2,6 +2,46 @@ import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Ollama, Message as OllamaMessage } from 'ollama'
 
+const PROMPT_INJECTION_REGEX = new RegExp(
+  [
+    // System override attempts
+    'ignore\\s+(all|previous|above|earlier)\\s+(instructions|rules|prompts|messages)',
+    'disregard\\s+(all|previous|system)\\s+(instructions|rules|prompts)',
+    'forget\\s+(your|all|previous)\\s+(instructions|rules|training)',
+    'override\\s+(system|developer|assistant)\\s+(prompt|message|instructions)',
+
+    // Role impersonation
+    'you\\s+are\\s+(now|no\\s+longer)\\s+(chatgpt|assistant|system)',
+    'act\\s+as\\s+(system|developer|assistant|admin)',
+    'pretend\\s+to\\s+be\\s+(system|developer|assistant)',
+
+    // System prompt extraction
+    'show\\s+(me\\s+)?(your|the)\\s+(system|developer|initial)\\s+prompt',
+    'reveal\\s+(your|the)\\s+(system|developer)\\s+instructions',
+    'print\\s+(system|developer)\\s+(prompt|message)',
+
+    // Instruction hijacking
+    'from\\s+now\\s+on',
+    'new\\s+instructions',
+    'replace\\s+previous\\s+instructions',
+    'priority\\s+instructions',
+
+    // Hidden injection patterns
+    '```[\\s\\S]*?```', // code block injection
+    '<system>[\\s\\S]*?<\\/system>',
+    '<assistant>[\\s\\S]*?<\\/assistant>',
+    '<developer>[\\s\\S]*?<\\/developer>',
+
+    // Jailbreak patterns
+    'jailbreak',
+    'dan\\s+mode',
+    'developer\\s+mode',
+    'god\\s+mode',
+    'bypass\\s+(safety|rules|filters|policies)',
+  ].join('|'),
+  'i',
+)
+
 @Injectable()
 export class OllamaAiService {
   private readonly llmService: Ollama
@@ -48,6 +88,12 @@ export class OllamaAiService {
       stream: false,
     })
 
+    const unsafeResponse = 'I am sorry. I can\'t respond to your command.'
+
+    if (PROMPT_INJECTION_REGEX.test(prompt.toLowerCase())) {
+      return unsafeResponse
+    }
+
     const safetyResult = await this.safetyService.chat({
       model: this.safetyModel,
       messages: [
@@ -60,7 +106,7 @@ export class OllamaAiService {
 
     const isSafe = String(safetyResult.message.content)
     if (isSafe.includes('unsafe')) {
-      return 'I am sorry. I can\'t respond to your command.'
+      return unsafeResponse
     }
 
     const content = response.message.content
@@ -83,6 +129,12 @@ export class OllamaAiService {
     const userInput = messages[messages.length - 1]
     // const modelOutput = response.message
 
+    const unsafeResponse = 'I am sorry. I can\'t respond to your command.'
+
+    if (PROMPT_INJECTION_REGEX.test(userInput.content.toLowerCase())) {
+      return unsafeResponse
+    }
+
     const safetyResult = await this.safetyService.chat({
       model: this.safetyModel,
       messages: [
@@ -93,18 +145,18 @@ export class OllamaAiService {
 
     const isSafe = String(safetyResult.message.content)
     if (isSafe.includes('unsafe')) {
-      return 'I am sorry. I can\'t respond to your command.'
+      return unsafeResponse
     }
 
     const content = response.message.content
 
-    // console.log('user input')
-    // console.log(userInput)
+    console.log('user input')
+    console.log(userInput)
     // console.log('ollama response')
     // console.log(response)
 
-    // console.log('validator response')
-    // console.log(safety)
+    console.log('validator response')
+    console.log(safetyResult)
 
     return content
   }
