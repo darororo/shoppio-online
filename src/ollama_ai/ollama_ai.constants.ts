@@ -1,1 +1,0 @@
-export const OLLAMA_SERVICE = "OLLAMA_SERVICE"

@@ -1,33 +1,32 @@
-import { ConfigModule } from '@nestjs/config';
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-// import { UsersModule } from './users/users.module';
-import { BuyersModule } from './buyers/buyers.module';
+import { Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { ScheduleModule } from '@nestjs/schedule'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { telegrafSessionMiddleware } from 'middleware/telegraf-session.middleware'
+import { TelegrafModule } from 'nestjs-telegraf'
 // import { PagesModule } from './pages/pages.module';
 // import { MessagesModule } from './messages/messages.module';
-import { AnalyzedMessagesModule } from './analyzed_messages/analyzed_messages.module';
-import { OrdersModule } from './orders/orders.module';
-import { AuthModule } from './auth/auth.module';
-import { FacebookModule } from './facebook/facebook.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { getDatabaseConfig } from './database/database.provider';
-// import { SocialAccountModule } from './social_account/social_account.module';
-import { SocialPagesModule } from './social_pages/social_pages.module';
+import { AnalyzedMessagesModule } from './analyzed_messages/analyzed_messages.module'
+import { AnalyzerModule } from './analyzer/analyzer.module'
+import { AnalyzerService } from './analyzer/analyzer.service'
+import { GeminiService } from './analyzer/gemini.service'
+import { AppController } from './app.controller'
+import { AppService } from './app.service'
+import { AuthModule } from './auth/auth.module'
+// import { UsersModule } from './users/users.module';
+import { BuyersModule } from './buyers/buyers.module'
 // import { PostsModule } from './posts/posts.module';
 // import { PostDistributionsModule } from './post_distributions/post_distributions.module';
-import { CommonModule } from './common/common.module';
-import { GeminiService } from './analyzer/gemini.service';
-import { AnalyzerService } from './analyzer/analyzer.service';
-import { AnalyzerModule } from './analyzer/analyzer.module';
-import { TelegramBotModule } from './telegram_bot/telegram_bot.module';
-import { Telegraf } from 'telegraf';
-import { TelegrafModule } from 'nestjs-telegraf';
-import { telegrafSessionMiddleware } from 'middleware/telegraf-session.middleware';
-import { SHOPPIO_BOT_NAME } from './telegram_bot/telegram_bot.constants';
-import { OllamaAiModule } from './ollama_ai/ollama_ai.module';
-import { UnhandledExceptionLogger } from './common/unhandled-exception.logger';
-import { ScheduleModule } from '@nestjs/schedule'
+import { CommonModule } from './common/common.module'
+import { UnhandledExceptionLogger } from './common/unhandled-exception.logger'
+import { getDatabaseConfig } from './database/database.provider'
+import { FacebookModule } from './facebook/facebook.module'
+import { OllamaAiModule } from './ollama_ai/ollama_ai.module'
+import { OrdersModule } from './orders/orders.module'
+// import { SocialAccountModule } from './social_account/social_account.module';
+import { SocialPagesModule } from './social_pages/social_pages.module'
+import { SHOPPIO_BOT_NAME } from './telegram_bot/telegram_bot.constants'
+import { TelegramBotModule } from './telegram_bot/telegram_bot.module'
 
 @Module({
   imports: [
@@ -61,12 +60,7 @@ import { ScheduleModule } from '@nestjs/schedule'
         // }
       }),
     }),
-    OllamaAiModule.register({
-      host: process.env.OLLAMA_HOST || '',
-      model: process.env.OLLAMA_MODEL || '',
-      apiKey: process.env.OLLAMA_API_KEY || '',
-      systemPrompt: process.env.OLLAMA_SYSTEM_PROMPT || '',
-    }),
+    OllamaAiModule,
     TelegramBotModule,
     // SocialAccountModule,
     SocialPagesModule,
@@ -89,4 +83,4 @@ import { ScheduleModule } from '@nestjs/schedule'
     UnhandledExceptionLogger,
   ],
 })
-export class AppModule { }
+export class AppModule {}
